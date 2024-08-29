@@ -8,6 +8,7 @@
     # flyctl_version: "0.1.130"
     pulumi_version: "v3.94.2"
     zoom_version: "6.1.11.1545"  # Change to current zoom version
+    zoom_gpg_key_url: "https://zoom.us/linux/download/pubkey"
     mattermost_install_dir: "/opt/mattermost-desktop"
 
   tasks:
@@ -427,6 +428,19 @@
       register: zoom_check
       ignore_errors: yes
       changed_when: false
+
+    - name: Download Zoom GPG key
+      ansible.builtin.get_url:
+        url: "{{ zoom_gpg_key_url }}"
+        dest: "/tmp/zoom_gpg_key"
+        mode: '0644'
+      when: zoom_check.rc != 0
+
+    - name: Import Zoom GPG key
+      ansible.builtin.rpm_key:
+        key: "/tmp/zoom_gpg_key"
+        state: present
+      when: zoom_check.rc != 0
 
     - name: Download Zoom RPM
       ansible.builtin.get_url:
