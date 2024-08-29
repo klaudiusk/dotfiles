@@ -7,6 +7,7 @@
   vars:
     # flyctl_version: "0.1.130"
     pulumi_version: "v3.94.2"
+    zoom_version: "6.1.11.1545"  # Change to current zoom version
     mattermost_install_dir: "/opt/mattermost-desktop"
 
   tasks:
@@ -336,6 +337,7 @@
           - org.telegram.desktop
           - com.discordapp.Discord
           - com.slack.Slack
+          # - us.zoom.Zoom
         state: present
 
     - name: Ensure fonts directory
@@ -420,34 +422,42 @@
         path: "{{ mattermost_install_dir }}/mattermost-desktop"
         mode: '0755'
 
-    - name: Add Zoom GPG key
-      ansible.builtin.rpm_key:
-        key: https://zoom.us/linux/download/pubkey
-        state: present
+    - name: Check if Zoom is already installed
+      ansible.builtin.command: rpm -q zoom
+      register: zoom_check
+      ignore_errors: yes
+      changed_when: false
 
-    - name: Check if Zoom repository is already added
-      ansible.builtin.stat:
-        path: /etc/yum.repos.d/zoom.repo
-      register: zoom_repo_check
-
-    - name: Add Zoom repository
-      ansible.builtin.yum_repository:
-        name: zoom
-        description: Zoom Video Communications, Inc.
-        baseurl: https://rpm.zoom.us
-        enabled: yes
-        gpgcheck: yes
-        gpgkey: https://zoom.us/linux/download/pubkey
-      when: not zoom_repo_check.stat.exists
-
-    - name: Update package cache
-      ansible.builtin.dnf:
-        update_cache: yes
+    - name: Download Zoom RPM
+      ansible.builtin.get_url:
+        url: "https://zoom.us/client/{{ zoom_version }}/zoom_x86_64.rpm"
+        dest: "/tmp/zoom_{{ zoom_version }}_x86_64.rpm"
+        mode: '0644'
+      when: zoom_check.rc != 0
 
     - name: Install Zoom
       ansible.builtin.dnf:
-        name: zoom
+        name: "/tmp/zoom_{{ zoom_version }}_x86_64.rpm"
         state: present
+      when: zoom_check.rc != 0
+
+    - name: Create Zoom desktop entry
+      ansible.builtin.template:
+        src: zoom_desktop_entry.j2
+        dest: "/usr/share/applications/Zoom.desktop"
+        mode: '0644'
+      vars:
+        app_name: "Zoom"
+        app_exec: "/usr/bin/zoom"
+        app_icon: "/usr/share/zoom/application-icon.png"
+
+    - name: Ensure Zoom desktop entry is valid
+      ansible.builtin.command: desktop-file-validate /usr/share/applications/Zoom.desktop
+      changed_when: false
+
+    - name: Update desktop database
+      ansible.builtin.command: update-desktop-database
+      changed_when: false
 
     # set main dconf settings for Gnome
     - name: dconf settings
