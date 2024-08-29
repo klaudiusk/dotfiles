@@ -429,19 +429,6 @@
       ignore_errors: yes
       changed_when: false
 
-    - name: Download Zoom GPG key
-      ansible.builtin.get_url:
-        url: "{{ zoom_gpg_key_url }}"
-        dest: "/tmp/zoom_gpg_key"
-        mode: '0644'
-      when: zoom_check.rc != 0
-
-    - name: Import Zoom GPG key
-      ansible.builtin.rpm_key:
-        key: "/tmp/zoom_gpg_key"
-        state: present
-      when: zoom_check.rc != 0
-
     - name: Download Zoom RPM
       ansible.builtin.get_url:
         url: "https://zoom.us/client/{{ zoom_version }}/zoom_x86_64.rpm"
@@ -453,21 +440,8 @@
       ansible.builtin.dnf:
         name: "/tmp/zoom_{{ zoom_version }}_x86_64.rpm"
         state: present
+        disable_gpg_check: yes
       when: zoom_check.rc != 0
-
-    - name: Create Zoom desktop entry
-      ansible.builtin.template:
-        src: zoom_desktop_entry.j2
-        dest: "/usr/share/applications/Zoom.desktop"
-        mode: '0644'
-      vars:
-        app_name: "Zoom"
-        app_exec: "/usr/bin/zoom"
-        app_icon: "/usr/share/zoom/application-icon.png"
-
-    - name: Ensure Zoom desktop entry is valid
-      ansible.builtin.command: desktop-file-validate /usr/share/applications/Zoom.desktop
-      changed_when: false
 
     - name: Update desktop database
       ansible.builtin.command: update-desktop-database
