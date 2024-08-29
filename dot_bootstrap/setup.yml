@@ -5,8 +5,9 @@
   connection: local
   gather_facts: true
   vars:
-    flyctl_version: "0.1.130"
+    # flyctl_version: "0.1.130"
     pulumi_version: "v3.94.2"
+    mattermost_install_dir: "/opt/mattermost-desktop"
 
   tasks:
     - name: Get my user
@@ -80,25 +81,6 @@
         name: nano-default-editor
         state: absent
 
-#     - name: Add Brave Browser Repo
-#       ansible.builtin.yum_repository:
-#         name: brave-browser
-#         description: Brave Browser
-#         baseurl: https://brave-browser-rpm-release.s3.brave.com/x86_64/
-#         gpgkey: https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
-#         gpgcheck: true
-#         enabled: true
-# 
-#     - name: Import Brave Browser GPG Key
-#       ansible.builtin.rpm_key:
-#         key: https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
-#         state: present
-# 
-#     - name: Install Brave Browser
-#       ansible.builtin.dnf:
-#         name: brave-browser
-#         state: present
-# 
 #     - name: Import Microsoft GPG Key
 #       ansible.builtin.rpm_key:
 #         key: https://packages.microsoft.com/keys/microsoft.asc
@@ -212,34 +194,34 @@
         creates: /usr/local/bin/pulumi
       when: pulumi_installed is failed or pulumi_installed.stdout is not search(pulumi_version)
 
-    - name: Check current 1Password version
-      ansible.builtin.command: 1password --version
-      register: current_1password_version
-      ignore_errors: true
+    - name: Check if 1Password is installed
+      ansible.builtin.command: dnf list installed 1password
+      register: onepassword_check
       changed_when: false
+      failed_when: false
 
-    - name: Add 1Password repository key
+    - name: Add 1Password GPG key
       ansible.builtin.rpm_key:
         key: https://downloads.1password.com/linux/keys/1password.asc
         state: present
-      when: current_1password_version.rc != 0 or 'command not found' in current_1password_version.stderr
+      when: onepassword_check.rc != 0
 
     - name: Add 1Password repository
       ansible.builtin.yum_repository:
         name: 1password
         description: 1Password Stable Channel
         baseurl: https://downloads.1password.com/linux/rpm/stable/$basearch
-        enabled: true
-        gpgcheck: true
-        repo_gpgcheck: true
+        enabled: yes
+        gpgcheck: yes
+        repo_gpgcheck: yes
         gpgkey: https://downloads.1password.com/linux/keys/1password.asc
-      when: current_1password_version.rc != 0 or 'command not found' in current_1password_version.stderr
+      when: onepassword_check.rc != 0
 
     - name: Install 1Password
       ansible.builtin.dnf:
         name: 1password
         state: present
-      when: current_1password_version.rc != 0 or 'command not found' in current_1password_version.stderr
+      when: onepassword_check.rc != 0
 
     - name: Get latest Nextcloud AppImage version
       ansible.builtin.uri:
@@ -276,40 +258,47 @@
       ansible.builtin.uri:
         url: https://data.services.jetbrains.com/products/releases?code=PCP&latest=true&type=release
         return_content: yes
-      register: pycharm_latest
+      register: pycharm_version_response
 
-    - name: Check current PyCharm version
+    - name: Set PyCharm version
+      ansible.builtin.set_fact:
+        pycharm_version: "{{ (pycharm_version_response.json.PCP | first).version }}"
+
+    - name: Check if PyCharm is already installed
       ansible.builtin.stat:
-        path: "~{{ remote_regular_user }}/.local/pycharm/bin/pycharm.sh"
-      register: pycharm_stat
+        path: "/home/{{ remote_regular_user }}/.local/pycharm/pycharm-{{ pycharm_version }}"
+      register: pycharm_check
 
-    - name: Get current PyCharm version
-      ansible.builtin.command: "~{{ remote_regular_user }}/.local/pycharm/bin/pycharm.sh --version"
-      register: current_pycharm_version
-      when: pycharm_stat.stat.exists
-      changed_when: false
-      ignore_errors: true
+    - name: Download and install PyCharm
+      block:
+        - name: Download PyCharm
+          ansible.builtin.get_url:
+            url: "https://download.jetbrains.com/python/pycharm-professional-{{ pycharm_version }}.tar.gz"
+            dest: "/tmp/pycharm-{{ pycharm_version }}.tar.gz"
 
-    - name: Download and extract PyCharm
-      ansible.builtin.unarchive:
-        src: "{{ pycharm_latest.json.PCP[0].downloads.linux.link }}"
-        dest: "~{{ remote_regular_user }}/.local/"
-        remote_src: yes
-        creates: "~{{ remote_regular_user }}/.local/pycharm-{{ pycharm_latest.json.PCP[0].version }}"
-      when: not pycharm_stat.stat.exists or (current_pycharm_version.stdout is defined and current_pycharm_version.stdout != pycharm_latest.json.PCP[0].version)
+        - name: Ensure PyCharm directory exists
+          ansible.builtin.file:
+            path: "/home/{{ remote_regular_user }}/.local/pycharm"
+            state: directory
+            mode: '0755'
+            owner: "{{ remote_regular_user }}"
 
-    - name: Create symlink for PyCharm
-      ansible.builtin.file:
-        src: "~{{ remote_regular_user }}/.local/pycharm-{{ pycharm_latest.json.PCP[0].version }}"
-        dest: "~{{ remote_regular_user }}/.local/pycharm"
-        state: link
-      when: not pycharm_stat.stat.exists or (current_pycharm_version.stdout is defined and current_pycharm_version.stdout != pycharm_latest.json.PCP[0].version)
+        - name: Extract PyCharm
+          ansible.builtin.unarchive:
+            src: "/tmp/pycharm-{{ pycharm_version }}.tar.gz"
+            dest: "/home/{{ remote_regular_user }}/.local/pycharm"
+            remote_src: yes
+            owner: "{{ remote_regular_user }}"
 
-    - name: Create PyCharm desktop entry
-      ansible.builtin.template:
-        src: pycharm_desktop_entry.j2
-        dest: "/usr/share/applications/pycharm.desktop"
-        mode: '0644'
+        - name: Create PyCharm desktop entry
+          ansible.builtin.template:
+            src: pycharm_desktop_entry.j2
+            dest: "/home/{{ remote_regular_user }}/.local/share/applications/pycharm.desktop"
+            mode: '0644'
+            owner: "{{ remote_regular_user }}"
+          vars:
+            pycharm_dir: "/home/{{ remote_regular_user }}/.local/pycharm/pycharm-{{ pycharm_version }}"
+      when: not pycharm_check.stat.exists
 
 #     - name: Check if the targeted version of flyctl is installed
 #       ansible.builtin.command: flyctl version
@@ -342,27 +331,114 @@
           - org.gnome.meld
           - org.sqlitebrowser.sqlitebrowser
           - org.gnome.World.PikaBackup
+          - org.telegram.desktop
+          - com.discordapp.Discord
+          - com.slack.Slack
         state: present
 
     - name: Ensure fonts directory
       ansible.builtin.file:
-        path: "~{{ remote_regular_user }}/.fonts"
+        path: "/home/{{ remote_regular_user }}/.fonts"
         state: directory
         mode: "0755"
         owner: "{{ remote_regular_user }}"
 
     - name: Check if Jetbrains Mono exists
-      ansible.builtin.shell: "ls ~{{ remote_regular_user }}/.fonts/JetBrainsMonoNerd*FontMono*"
-      register: jetbrains_mono_exists
-      ignore_errors: true
-      changed_when: false
+      ansible.builtin.find:
+        paths: "/home/{{ remote_regular_user }}/.fonts"
+        patterns: "JetBrainsMonoNerd*FontMono*"
+      register: jetbrains_mono_files
+      become: false
 
     - name: Download Jetbrains mono
-      when: jetbrains_mono_exists is failed
       ansible.builtin.unarchive:
         src: https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/JetBrainsMono.zip
-        dest: "~{{ remote_regular_user }}/.fonts/"
+        dest: "/home/{{ remote_regular_user }}/.fonts/"
         remote_src: true
         mode: "0755"
         owner: "{{ remote_regular_user }}"
+      when: jetbrains_mono_files.matched == 0
 
+    - name: Get latest Mattermost Desktop version
+      ansible.builtin.uri:
+        url: https://api.github.com/repos/mattermost/desktop/releases/latest
+        return_content: yes
+      register: mattermost_latest
+      become: false
+
+    - name: Check if Mattermost is already installed
+      ansible.builtin.stat:
+        path: "{{ mattermost_install_dir }}/mattermost-desktop"
+      register: mattermost_check
+
+    - name: Create Mattermost installation directory
+      ansible.builtin.file:
+        path: "{{ mattermost_install_dir }}"
+        state: directory
+        mode: "0755"
+      when: not mattermost_check.stat.exists
+
+    - name: Download Mattermost tarball
+      ansible.builtin.get_url:
+        url: "https://releases.mattermost.com/desktop/{{ mattermost_latest.json.tag_name | regex_replace('^v', '') }}/mattermost-desktop-{{ mattermost_latest.json.tag_name | regex_replace('^v', '') }}-linux-x64.tar.gz"
+        dest: "/tmp/mattermost-desktop-{{ mattermost_latest.json.tag_name | regex_replace('^v', '') }}-linux-x64.tar.gz"
+        mode: '0644'
+      when: not mattermost_check.stat.exists
+
+    - name: Extract Mattermost tarball
+      ansible.builtin.unarchive:
+        src: "/tmp/mattermost-desktop-{{ mattermost_latest.json.tag_name | regex_replace('^v', '') }}-linux-x64.tar.gz"
+        dest: "{{ mattermost_install_dir }}"
+        remote_src: yes
+        extra_opts: [--strip-components=1]
+      when: not mattermost_check.stat.exists
+
+    # change stuff here
+
+    - name: Create Mattermost desktop entry
+      ansible.builtin.template:
+        src: mattermost_desktop_entry.j2
+        dest: "/usr/share/applications/mattermost.desktop"
+        mode: '0644'
+      vars:
+        app_name: "Mattermost"
+        app_exec: "{{ mattermost_install_dir }}/mattermost-desktop"
+        app_icon: "{{ mattermost_install_dir }}/app_icon.png"
+
+    - name: Ensure Mattermost desktop entry is valid
+      ansible.builtin.command: desktop-file-validate /usr/share/applications/mattermost.desktop
+      changed_when: false
+
+    - name: Update desktop database
+      ansible.builtin.command: update-desktop-database
+      changed_when: false
+
+    - name: Ensure Mattermost executable has correct permissions
+      ansible.builtin.file:
+        path: "{{ mattermost_install_dir }}/mattermost-desktop"
+        mode: '0755'
+
+    - name: Add Zoom GPG key
+      ansible.builtin.rpm_key:
+        key: https://zoom.us/linux/download/pubkey
+        state: present
+
+    - name: Check if Zoom repository is already added
+      ansible.builtin.stat:
+        path: /etc/yum.repos.d/zoom.repo
+      register: zoom_repo_check
+
+    - name: Add Zoom repository
+      ansible.builtin.yum_repository:
+        name: zoom
+        description: Zoom Video Communications, Inc.
+        baseurl: https://rpm.zoom.us
+        enabled: yes
+        gpgcheck: yes
+        gpgkey: https://zoom.us/linux/download/pubkey
+      when: not zoom_repo_check.stat.exists
+
+    - name: Install Zoom
+      ansible.builtin.dnf:
+        name: zoom
+        state: present
