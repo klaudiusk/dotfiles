@@ -14,6 +14,10 @@
       ansible.builtin.set_fact:
         remote_regular_user: "{{ ansible_env.SUDO_USER or ansible_user_id }}"
 
+    - name: Load dconf settings
+      ansible.builtin.command:
+        cmd: "dconf load / < /home/{{ remote_regular_user }}/.config/dconf/dconf-settings.ini"
+
     - name: Install packages
       ansible.builtin.dnf:
         name:
