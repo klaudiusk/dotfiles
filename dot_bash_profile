@@ -5,10 +5,3 @@ if [ -f ~/.bashrc ]; then
     . ~/.bashrc
 fi
 
-# User specific environment and startup programs
-
-# OpenAI
-export OPENAI_API_KEY=`op read "op://Private/OpenAI API key/credential"`
-
-# Langchain
-export LANGCHAIN_API_KEY=`op read "op://Private/Langchain API key/credential"`

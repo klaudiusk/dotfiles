@@ -26,5 +26,17 @@ if [ -d ~/.bashrc.d ]; then
 fi
 unset rc
 
+# Source global definitions
+if [ -f ~/.bash_aliases ]; then
+    . ~/.bash_aliases
+fi
+
 eval "$(zoxide init --cmd cd bash)"
 
+# User specific environment and startup programs
+
+# OpenAI
+# export OPENAI_API_KEY=`op read "op://Private/OpenAI API key/credential"`
+
+# Langchain
+# export LANGCHAIN_API_KEY=`op read "op://Private/Langchain API key/credential"`

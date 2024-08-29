@@ -1,0 +1,368 @@
+---
+- name: Machine setup
+  hosts: localhost
+  become: true
+  connection: local
+  gather_facts: true
+  vars:
+    flyctl_version: "0.1.130"
+    pulumi_version: "v3.94.2"
+
+  tasks:
+    - name: Get my user
+      ansible.builtin.set_fact:
+        remote_regular_user: "{{ ansible_env.SUDO_USER or ansible_user_id }}"
+
+    - name: Install packages
+      ansible.builtin.dnf:
+        name:
+          - git
+          - htop
+          - zoxide
+          - btop
+          - vim
+          - firefox
+          - gh
+          - gnome-tweaks
+          - gcc
+          - helm
+          - go-task
+          - ripgrep
+          - poetry
+          - fzf
+          - tmux
+          - syncthing
+          - ffmpeg-free
+          - zlib
+          - zlib-devel
+          - make
+          - patch
+          - bzip2
+          - bzip2-devel
+          - readline-devel
+          - sqlite
+          - sqlite-devel
+          - openssl-devel
+          - tk-devel
+          - libffi-devel
+          - xz-devel
+          - libuuid-devel
+          - gdbm-libs
+          - libnsl2
+          - luarocks
+          - wl-clipboard
+          - fd-find
+          - gcc-c++
+          - doctl
+          - autoconf
+          - ncurses-devel
+          - wxGTK-devel
+          - wxBase
+          - java-1.8.0-openjdk-devel
+          - libiodbc
+          - unixODBC-devel.x86_64
+          - erlang-odbc.x86_64
+          - libxslt
+          - fop
+          - inotify-tools
+          - unar
+          - neovim
+          - ncdu
+        state: present
+
+    - name: Install DNF plugins core
+      ansible.builtin.dnf:
+        name: dnf-plugins-core
+        state: present
+
+    - name: Uninstall nano-default-editor
+      ansible.builtin.dnf:
+        name: nano-default-editor
+        state: absent
+
+#     - name: Add Brave Browser Repo
+#       ansible.builtin.yum_repository:
+#         name: brave-browser
+#         description: Brave Browser
+#         baseurl: https://brave-browser-rpm-release.s3.brave.com/x86_64/
+#         gpgkey: https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
+#         gpgcheck: true
+#         enabled: true
+# 
+#     - name: Import Brave Browser GPG Key
+#       ansible.builtin.rpm_key:
+#         key: https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
+#         state: present
+# 
+#     - name: Install Brave Browser
+#       ansible.builtin.dnf:
+#         name: brave-browser
+#         state: present
+# 
+#     - name: Import Microsoft GPG Key
+#       ansible.builtin.rpm_key:
+#         key: https://packages.microsoft.com/keys/microsoft.asc
+#         state: present
+# 
+#     - name: Add Visual Studio Code Repo
+#       ansible.builtin.yum_repository:
+#         name: vscode
+#         description: Visual Studio Code
+#         baseurl: https://packages.microsoft.com/yumrepos/vscode
+#         gpgkey: https://packages.microsoft.com/keys/microsoft.asc
+#         gpgcheck: true
+#         enabled: true
+# 
+#     - name: Install VS Code
+#       ansible.builtin.dnf:
+#         name: code
+#         state: present
+
+    - name: Add Docker repo
+      ansible.builtin.yum_repository:
+        name: docker
+        description: Docker repo
+        baseurl: "https://download.docker.com/linux/fedora/{{ ansible_distribution_major_version }}/{{ ansible_architecture }}/stable"
+        gpgkey: "https://download.docker.com/linux/fedora/gpg"
+        gpgcheck: true
+        enabled: true
+
+    - name: Install Docker
+      ansible.builtin.dnf:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+
+    - name: Add Docker group
+      ansible.builtin.group:
+        name: docker
+        state: present
+
+    - name: Add user to docker group
+      ansible.builtin.user:
+        name: "{{ remote_regular_user }}"
+        groups: docker
+        append: true
+
+#     - name: Add rtx config manager
+#       ansible.builtin.yum_repository:
+#         name: rtx
+#         description: RTX Repo
+#         baseurl: https://rtx.pub/rpm
+#         gpgkey: https://rtx.pub/gpg-key.pub
+#         gpgcheck: true
+#         enabled: true
+# 
+#     - name: Install RTX
+#       ansible.builtin.dnf:
+#         name: rtx
+#         state: present
+# 
+#     - name: Add kubectl repo
+#       ansible.builtin.yum_repository:
+#         name: Kubernetes
+#         description: Kubernetes repo
+#         baseurl: https://pkgs.k8s.io/core:/stable:/v1.28/rpm/
+#         gpgkey: https://pkgs.k8s.io/core:/stable:/v1.28/rpm/repodata/repomd.xml.key
+#         gpgcheck: true
+#         enabled: true
+# 
+#     - name: Install kubectl
+#       ansible.builtin.dnf:
+#         name: kubectl
+#         state: present
+# 
+#     - name: Add Hashicorp Repo
+#       ansible.builtin.yum_repository:
+#         name: hashicorp
+#         description: Hashicorp repo
+#         baseurl: https://rpm.releases.hashicorp.com/fedora/$releasever/$basearch/stable
+#         gpgkey: https://rpm.releases.hashicorp.com/gpg
+#         gpgcheck: true
+#         enabled: true
+# 
+#     - name: Install Terraform
+#       ansible.builtin.dnf:
+#         name: terraform
+#         state: present
+# 
+    - name: Check if Pulumi is installed
+      ansible.builtin.command:
+        cmd: pulumi version
+      register: pulumi_installed
+      ignore_errors: true
+      changed_when: false
+
+    - name: Download Pulumi SDK
+      ansible.builtin.get_url:
+        url: "https://get.pulumi.com/releases/sdk/pulumi-{{ pulumi_version }}-linux-x64.tar.gz"
+        dest: "/tmp/pulumi-{{ pulumi_version }}-linux-x64.tar.gz"
+        mode: "0644"
+      when: pulumi_installed is failed or pulumi_installed.stdout is not search(pulumi_version)
+
+    - name: Extract Pulumi to /usr/local/bin
+      ansible.builtin.unarchive:
+        src: "/tmp/pulumi-{{ pulumi_version }}-linux-x64.tar.gz"
+        dest: /usr/local/bin
+        extra_opts: [--strip-components=1]
+        creates: /usr/local/bin/pulumi
+      when: pulumi_installed is failed or pulumi_installed.stdout is not search(pulumi_version)
+
+    - name: Check current 1Password version
+      ansible.builtin.command: 1password --version
+      register: current_1password_version
+      ignore_errors: true
+      changed_when: false
+
+    - name: Add 1Password repository key
+      ansible.builtin.rpm_key:
+        key: https://downloads.1password.com/linux/keys/1password.asc
+        state: present
+      when: current_1password_version.rc != 0 or 'command not found' in current_1password_version.stderr
+
+    - name: Add 1Password repository
+      ansible.builtin.yum_repository:
+        name: 1password
+        description: 1Password Stable Channel
+        baseurl: https://downloads.1password.com/linux/rpm/stable/$basearch
+        enabled: true
+        gpgcheck: true
+        repo_gpgcheck: true
+        gpgkey: https://downloads.1password.com/linux/keys/1password.asc
+      when: current_1password_version.rc != 0 or 'command not found' in current_1password_version.stderr
+
+    - name: Install 1Password
+      ansible.builtin.dnf:
+        name: 1password
+        state: present
+      when: current_1password_version.rc != 0 or 'command not found' in current_1password_version.stderr
+
+    - name: Get latest Nextcloud AppImage version
+      ansible.builtin.uri:
+        url: https://api.github.com/repos/nextcloud-releases/desktop/releases/latest
+        return_content: yes
+      register: nextcloud_latest
+
+    - name: Check current Nextcloud version
+      ansible.builtin.stat:
+        path: "/usr/local/bin/nextcloud"
+      register: nextcloud_stat
+
+    - name: Get current Nextcloud version
+      ansible.builtin.command: /usr/local/bin/nextcloud --version
+      register: current_nextcloud_version
+      when: nextcloud_stat.stat.exists
+      changed_when: false
+      ignore_errors: true
+
+    - name: Download Nextcloud AppImage
+      ansible.builtin.get_url:
+        url: "https://github.com/nextcloud-releases/desktop/releases/download/{{ nextcloud_latest.json.tag_name }}/Nextcloud-{{ nextcloud_latest.json.tag_name | regex_replace('^v', '') }}-x86_64.AppImage"
+        dest: "/usr/local/bin/nextcloud"
+        mode: '0755'
+      when: not nextcloud_stat.stat.exists or (current_nextcloud_version.stdout is defined and current_nextcloud_version.stdout != nextcloud_latest.json.tag_name)
+
+    - name: Create Nextcloud desktop entry
+      ansible.builtin.template:
+        src: nextcloud_desktop_entry.j2
+        dest: "/usr/share/applications/nextcloud.desktop"
+        mode: '0644'
+
+    - name: Get latest PyCharm version
+      ansible.builtin.uri:
+        url: https://data.services.jetbrains.com/products/releases?code=PCP&latest=true&type=release
+        return_content: yes
+      register: pycharm_latest
+
+    - name: Check current PyCharm version
+      ansible.builtin.stat:
+        path: "~{{ remote_regular_user }}/.local/pycharm/bin/pycharm.sh"
+      register: pycharm_stat
+
+    - name: Get current PyCharm version
+      ansible.builtin.command: "~{{ remote_regular_user }}/.local/pycharm/bin/pycharm.sh --version"
+      register: current_pycharm_version
+      when: pycharm_stat.stat.exists
+      changed_when: false
+      ignore_errors: true
+
+    - name: Download and extract PyCharm
+      ansible.builtin.unarchive:
+        src: "{{ pycharm_latest.json.PCP[0].downloads.linux.link }}"
+        dest: "~{{ remote_regular_user }}/.local/"
+        remote_src: yes
+        creates: "~{{ remote_regular_user }}/.local/pycharm-{{ pycharm_latest.json.PCP[0].version }}"
+      when: not pycharm_stat.stat.exists or (current_pycharm_version.stdout is defined and current_pycharm_version.stdout != pycharm_latest.json.PCP[0].version)
+
+    - name: Create symlink for PyCharm
+      ansible.builtin.file:
+        src: "~{{ remote_regular_user }}/.local/pycharm-{{ pycharm_latest.json.PCP[0].version }}"
+        dest: "~{{ remote_regular_user }}/.local/pycharm"
+        state: link
+      when: not pycharm_stat.stat.exists or (current_pycharm_version.stdout is defined and current_pycharm_version.stdout != pycharm_latest.json.PCP[0].version)
+
+    - name: Create PyCharm desktop entry
+      ansible.builtin.template:
+        src: pycharm_desktop_entry.j2
+        dest: "/usr/share/applications/pycharm.desktop"
+        mode: '0644'
+
+#     - name: Check if the targeted version of flyctl is installed
+#       ansible.builtin.command: flyctl version
+#       register: installed_flyctl_version
+#       ignore_errors: true
+#       changed_when: false
+# 
+#     - name: Download flyctl tar.gz
+#       ansible.builtin.get_url:
+#         url: "https://github.com/superfly/flyctl/releases/download/v{{ flyctl_version }}/flyctl_{{ flyctl_version }}_Linux_x86_64.tar.gz"
+#         dest: "/tmp/flyctl_{{ flyctl_version }}_Linux_x86_64.tar.gz"
+#         mode: "0644"
+#       when: flyctl_version not in installed_flyctl_version.stdout
+# 
+#     - name: Extract flyctl to /usr/local/bin
+#       ansible.builtin.unarchive:
+#         src: "/tmp/flyctl_{{ flyctl_version }}_Linux_x86_64.tar.gz"
+#         dest: "/usr/local/bin"
+#         remote_src: true
+#       when: flyctl_version not in installed_flyctl_version.stdout
+# 
+    - name: Install Flatpak packages
+      community.general.flatpak:
+        name:
+          - org.videolan.VLC
+          - md.obsidian.Obsidian
+          - org.gimp.GIMP
+          - rest.insomnia.Insomnia
+          - com.github.johnfactotum.Foliate
+          - org.gnome.meld
+          - org.sqlitebrowser.sqlitebrowser
+          - org.gnome.World.PikaBackup
+        state: present
+
+    - name: Ensure fonts directory
+      ansible.builtin.file:
+        path: "~{{ remote_regular_user }}/.fonts"
+        state: directory
+        mode: "0755"
+        owner: "{{ remote_regular_user }}"
+
+    - name: Check if Jetbrains Mono exists
+      ansible.builtin.shell: "ls ~{{ remote_regular_user }}/.fonts/JetBrainsMonoNerd*FontMono*"
+      register: jetbrains_mono_exists
+      ignore_errors: true
+      changed_when: false
+
+    - name: Download Jetbrains mono
+      when: jetbrains_mono_exists is failed
+      ansible.builtin.unarchive:
+        src: https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/JetBrainsMono.zip
+        dest: "~{{ remote_regular_user }}/.fonts/"
+        remote_src: true
+        mode: "0755"
+        owner: "{{ remote_regular_user }}"
+

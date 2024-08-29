@@ -3,6 +3,7 @@
 [user]
 	email = klaudiusk@gmail.com
 	name = Klaudius Kalcher
+	signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEeJVQ0TNJVZ/fWufyIBM0vLyLMZRIJHRysMuXZlpGtE
 [gpg]
 	format = ssh
 [gpg "ssh"]
