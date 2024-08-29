@@ -440,6 +440,10 @@
         gpgkey: https://zoom.us/linux/download/pubkey
       when: not zoom_repo_check.stat.exists
 
+    - name: Update package cache
+      ansible.builtin.dnf:
+        update_cache: yes
+
     - name: Install Zoom
       ansible.builtin.dnf:
         name: zoom
