@@ -37,6 +37,7 @@
           - zlib
           - zlib-devel
           - make
+          - python3-psutil
           - R
           - patch
           - bzip2
@@ -449,96 +450,113 @@
       block:
         - name: Input sources
           community.general.dconf:
-          key: "/org/gnome/desktop/input-sources/sources"
-          value: "[('xkb', 'us'), ('xkb', 'de+nodeadkeys')]"
-          state: present
+            key: "/org/gnome/desktop/input-sources/sources"
+            value: "[('xkb', 'us'), ('xkb', 'de+nodeadkeys')]"
+            state: present
+          become: false
 
         - name: Set desktop monospace font to JetBrains nerdfont
           community.general.dconf:
-          key: "/org/gnome/desktop/interface/monospace-font-name"
-          value: "JetBrainsMono Nerd Font Mono 12"
-          state: present
+            key: "/org/gnome/desktop/interface/monospace-font-name"
+            value: "'JetBrainsMono Nerd Font Mono 12'"
+            state: present
+          become: false
 
         - name: Alt-F1 shortcut for terminal binding
           community.general.dconf:
-          key: "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/binding"
-          value: "<Alt>F1"
-          state: present
+            key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/binding"
+            value: "'<Alt>F1'"
+            state: present
+          become: false
 
         - name: Alt-F1 shortcut for terminal command
           community.general.dconf:
-          key: "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/command"
-          value: "gnome-terminal"
-          state: present
+            key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/command"
+            value: "'gnome-terminal'"
+            state: present
+          become: false
 
         - name: Alt-F1 shortcut for terminal name
           community.general.dconf:
-          key: "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/name"
-          value: "Open terminal"
-          state: present
+            key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/name"
+            value: "'Open terminal'"
+            state: present
+          become: false
 
         - name: Terminal profile background color
           community.general.dconf:
-          key: "org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/background-color"
-          value: "rgb(0,43,54)"
-          state: present
+            key: "/org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/background-color"
+            value: "'rgb(0,43,54)'"
+            state: present
+          become: false
 
         - name: Terminal profile bold is bright
           community.general.dconf:
-          key: "org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/bold-is-bright"
-          value: "true"
-          state: present
+            key: "/org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/bold-is-bright"
+            value: "true"
+            state: present
+          become: false
 
         - name: Terminal profile default size columns
           community.general.dconf:
-          key: "org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/default-size-columns
-          value: "100"
-          state: present
+            key: "/org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/default-size-columns"
+            value: "100"
+            state: present
+          become: false
 
         - name: Terminal profile default size rows
           community.general.dconf:
-          key: "org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/default-size-rows"
-          value: "26"
-          state: present
+            key: "/org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/default-size-rows"
+            value: "26"
+            state: present
+          become: false
 
         - name: Terminal profile font
           community.general.dconf:
-          key: "org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/font"
-          value: "JetBrainsMono Nerd Font Mono 12"
-          state: present
+            key: "/org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/font"
+            value: "'JetBrainsMono Nerd Font Mono 12'"
+            state: present
+          become: false
 
         - name: Terminal profile foreground-color
           community.general.dconf:
-          key: "org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/foreground-color"
-          value: "rgb(131,148,150)"
-          state: present
+            key: "/org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/foreground-color"
+            value: "'rgb(131,148,150)'"
+            state: present
+          become: false
 
         - name: Terminal profile palette
           community.general.dconf:
-          key: "org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/palette"
-          value: "['rgb(23,20,33)', 'rgb(226,24,39)', 'rgb(38,162,105)', 'rgb(162,115,76)', 'rgb(18,72,139)', 'rgb(163,71,186)', 'rgb(42,161,179)', 'rgb(208,207,204)', 'rgb(94,92,100)', 'rgb(246,97,81)', 'rgb(51,218,122)', 'rgb(233,173,12)', 'rgb(42,123,222)', 'rgb(192,97,203)', 'rgb(51,199,222)', 'rgb(255,255,255)']"
-          state: present
+            key: "/org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/palette"
+            value: "['rgb(23,20,33)', 'rgb(226,24,39)', 'rgb(38,162,105)', 'rgb(162,115,76)', 'rgb(18,72,139)', 'rgb(163,71,186)', 'rgb(42,161,179)', 'rgb(208,207,204)', 'rgb(94,92,100)', 'rgb(246,97,81)', 'rgb(51,218,122)', 'rgb(233,173,12)', 'rgb(42,123,222)', 'rgb(192,97,203)', 'rgb(51,199,222)', 'rgb(255,255,255)']"
+            state: present
+          become: false
 
         - name: Terminal profile scrollback-lines
           community.general.dconf:
-          key: "org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/scrollback-lines"
-          value: "100000"
-          state: present
+            key: "/org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/scrollback-lines"
+            value: "100000"
+            state: present
+          become: false
 
         - name: Terminal profile use-system-font
           community.general.dconf:
-          key: "org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/use-system-font"
-          value: "false"
-          state: present
+            key: "/org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/use-system-font"
+            value: "false"
+            state: present
+          become: false
 
         - name: Terminal profile use-theme-colors
           community.general.dconf:
-          key: "org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/use-theme-colors"
-          value: "false"
-          state: present
+            key: "/org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/use-theme-colors"
+            value: "false"
+            state: present
+          become: false
 
         - name: Terminal profile name
           community.general.dconf:
-          key: "org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/visible-name"
-          value: "KK-default"
-          state: present
+            key: "/org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/visible-name"
+            value: "'KK-default'"
+            state: present
+          become: false
+
