@@ -270,7 +270,7 @@
 
     - name: Check if PyCharm is already installed
       ansible.builtin.stat:
-        path: "/home/{{ remote_regular_user }}/.local/pycharm/pycharm-{{ pycharm_version }}"
+        path: "/home/{{ remote_regular_user }}/.local/pycharm-{{ pycharm_version }}"
       register: pycharm_check
 
     - name: Download and install PyCharm
@@ -282,7 +282,7 @@
 
         - name: Ensure PyCharm directory exists
           ansible.builtin.file:
-            path: "/home/{{ remote_regular_user }}/.local/pycharm"
+            path: "/home/{{ remote_regular_user }}/.local/"
             state: directory
             mode: '0755'
             owner: "{{ remote_regular_user }}"
@@ -290,8 +290,15 @@
         - name: Extract PyCharm
           ansible.builtin.unarchive:
             src: "/tmp/pycharm-{{ pycharm_version }}.tar.gz"
-            dest: "/home/{{ remote_regular_user }}/.local/pycharm"
+            dest: "/home/{{ remote_regular_user }}/.local/"
             remote_src: yes
+            owner: "{{ remote_regular_user }}"
+
+        - name: Create symbolic link to PyCharm
+          ansible.builtin.file:
+            src: "/home/{{ remote_regular_user }}/.local/pycharm-{{ pycharm_version }}"
+            dest: "/home/{{ remote_regular_user }}/.local/pycharm"
+            state: link
             owner: "{{ remote_regular_user }}"
 
         - name: Create PyCharm desktop entry
@@ -301,7 +308,7 @@
             mode: '0644'
             owner: "{{ remote_regular_user }}"
           vars:
-            pycharm_dir: "/home/{{ remote_regular_user }}/.local/pycharm/pycharm-{{ pycharm_version }}"
+            pycharm_dir: "/home/{{ remote_regular_user }}/.local/pycharm-{{ pycharm_version }}"
       when: not pycharm_check.stat.exists
 
 #     - name: Check if the targeted version of flyctl is installed
@@ -333,11 +340,13 @@
           - rest.insomnia.Insomnia
           - com.github.johnfactotum.Foliate
           - org.gnome.meld
+          - org.gnome.Extensions
           - org.sqlitebrowser.sqlitebrowser
           - org.gnome.World.PikaBackup
           - org.telegram.desktop
           - com.discordapp.Discord
           - com.slack.Slack
+          - com.spotify.Client
           # - us.zoom.Zoom
         state: present
 
