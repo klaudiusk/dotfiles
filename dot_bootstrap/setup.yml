@@ -571,3 +571,11 @@
             state: present
           become: false
 
+        - name: Ensure Git remote URL for chezmoi repo is set to ssh url
+          ansible.builtin.git_config:
+            repo: "/home/{{ remote_regular_user }}/.local/share/chezmoi"
+            name: remote.origin.url
+            value: git@github.com:klaudiusk/dotfiles.git
+            scope: local
+          register: git_config_result
+          become: false
