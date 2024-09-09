@@ -73,6 +73,7 @@
           - unar
           - neovim
           - ncdu
+          - 1password-cli
         state: present
 
     - name: Install DNF plugins core
