@@ -74,6 +74,14 @@
           - neovim
           - ncdu
           - 1password-cli
+          - rust
+          - cargo
+          - texlive
+          - texlive-scheme-full
+          - texlive-moderncv
+          - texlive-geometry
+          - texlive-xcolor
+          - texlive-url
         state: present
 
     - name: Install DNF plugins core
@@ -228,7 +236,7 @@
         state: present
       when: onepassword_check.rc != 0
 
-    - name: Get latest Nextcloud AppImage version
+    - name: Get latest Nextcloud AppImage version # update
       ansible.builtin.uri:
         url: https://api.github.com/repos/nextcloud-releases/desktop/releases/latest
         return_content: yes
@@ -484,7 +492,7 @@
         - name: Alt-F1 shortcut for terminal command
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/command"
-            value: "'gnome-terminal'"
+            value: "'gnome-terminal -e tmux'"
             state: present
           become: false
 

@@ -1,0 +1,186 @@
+---
+- name: Machine setup
+  hosts: localhost
+  become: true
+  connection: local
+  gather_facts: true
+  vars:
+    # flyctl_version: "0.1.130"
+    pulumi_version: "v3.94.2"
+
+  tasks:
+    - name: Get my user
+      ansible.builtin.set_fact:
+        remote_regular_user: "{{ ansible_env.SUDO_USER or ansible_user_id }}"
+
+    - name: Install packages
+      ansible.builtin.package:
+        name:
+          - git
+          - htop
+          - vim
+          - gcc
+          - ripgrep
+          - fzf
+          - tmux
+          - syncthing
+          - make
+          - patch
+          - bzip2
+          - bzip2-devel
+          - libreadline-dev
+          - sqlite
+          - sqlite-devel
+          - openssl-devel
+          - libffi-devel
+          - xz-devel
+          - libuuid-devel
+          - gdbm-libs
+          - libnsl2
+          - luarocks
+          - wl-clipboard
+          - fd-find
+          - gcc-c++
+          - doctl
+          - autoconf
+          - ncurses-devel
+          - wxGTK-devel
+          - wxBase
+          - libiodbc
+          - unixODBC-devel.x86_64
+          - erlang-odbc.x86_64
+          - libxslt
+          - fop
+          - inotify-tools
+          - unar
+          - neovim
+          - ncdu
+        state: present
+
+    - name: Install packages
+      ansible.builtin.dnf:
+        name:
+          - R
+          - java-1.8.0-openjdk-devel
+          - python3-psutil
+          - zlib
+          - zlib-devel
+          - btop
+          - poetry
+          - zoxide
+          - gh
+          - helm
+          - go-task
+      when: ansible_distribution == 'Fedora'
+
+    - name: Install DNF plugins core
+      ansible.builtin.dnf:
+        name: dnf-plugins-core
+        state: present
+      when: ansible_distribution == 'Fedora'
+
+    - name: Uninstall nano-default-editor
+      ansible.builtin.dnf:
+        name: nano-default-editor
+        state: absent
+      when: ansible_distribution == 'Fedora'
+
+    - name: Add Docker repo
+      ansible.builtin.yum_repository:
+        name: docker
+        description: Docker repo
+        baseurl: "https://download.docker.com/linux/fedora/{{ ansible_distribution_major_version }}/{{ ansible_architecture }}/stable"
+        gpgkey: "https://download.docker.com/linux/fedora/gpg"
+        gpgcheck: true
+        enabled: true
+      when: ansible_distribution == "Fedora"
+
+    - name: Add Docker repo for Ubuntu
+      block:
+        - name: Add Docker GPG apt Key
+          ansible.builtin.apt_key:
+            url: https://download.docker.com/linux/ubuntu/gpg
+            state: present
+
+        - name: Add Docker Repository
+          ansible.builtin.apt_repository:
+            repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+            state: present
+      when: ansible_distribution == 'Ubuntu'
+
+    - name: Install Docker
+      ansible.builtin.dnf:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+
+    - name: Add Docker group
+      ansible.builtin.group:
+        name: docker
+        state: present
+
+    - name: Add user to docker group
+      ansible.builtin.user:
+        name: "{{ remote_regular_user }}"
+        groups: docker
+        append: true
+
+#     - name: Check if Pulumi is installed
+#       ansible.builtin.command:
+#         cmd: pulumi version
+#       register: pulumi_installed
+#       ignore_errors: true
+#       changed_when: false
+# 
+#     - name: Download Pulumi SDK
+#       ansible.builtin.get_url:
+#         url: "https://get.pulumi.com/releases/sdk/pulumi-{{ pulumi_version }}-linux-x64.tar.gz"
+#         dest: "/tmp/pulumi-{{ pulumi_version }}-linux-x64.tar.gz"
+#         mode: "0644"
+#       when: pulumi_installed is failed or pulumi_installed.stdout is not search(pulumi_version)
+# 
+#     - name: Extract Pulumi to /usr/local/bin
+#       ansible.builtin.unarchive:
+#         src: "/tmp/pulumi-{{ pulumi_version }}-linux-x64.tar.gz"
+#         dest: /usr/local/bin
+#         extra_opts: [--strip-components=1]
+#         creates: /usr/local/bin/pulumi
+#       when: pulumi_installed is failed or pulumi_installed.stdout is not search(pulumi_version)
+
+    - name: Ensure fonts directory
+      ansible.builtin.file:
+        path: "/home/{{ remote_regular_user }}/.fonts"
+        state: directory
+        mode: "0755"
+        owner: "{{ remote_regular_user }}"
+
+    - name: Check if Jetbrains Mono exists
+      ansible.builtin.find:
+        paths: "/home/{{ remote_regular_user }}/.fonts"
+        patterns: "JetBrainsMonoNerd*FontMono*"
+      register: jetbrains_mono_files
+      become: false
+
+    - name: Download Jetbrains mono
+      ansible.builtin.unarchive:
+        src: https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/JetBrainsMono.zip
+        dest: "/home/{{ remote_regular_user }}/.fonts/"
+        remote_src: true
+        mode: "0755"
+        owner: "{{ remote_regular_user }}"
+      when: jetbrains_mono_files.matched == 0
+
+
+    - name: Ensure Git remote URL for chezmoi repo is set to ssh url
+      ansible.builtin.git_config:
+        repo: "/home/{{ remote_regular_user }}/.local/share/chezmoi"
+        name: remote.origin.url
+        value: git@github.com:klaudiusk/dotfiles.git
+        scope: local
+      register: git_config_result
+      become: false
+
