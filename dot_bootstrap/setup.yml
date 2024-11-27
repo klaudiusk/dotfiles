@@ -73,7 +73,6 @@
           - unar
           - neovim
           - ncdu
-          - 1password-cli
           - rust
           - cargo
           - texlive
@@ -232,7 +231,9 @@
 
     - name: Install 1Password
       ansible.builtin.dnf:
-        name: 1password
+        name: 
+          - 1password
+          - 1password-cli
         state: present
       when: onepassword_check.rc != 0
 
