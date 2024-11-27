@@ -32,6 +32,8 @@ if [ -f ~/.bash_aliases ]; then
 fi
 
 eval "$(zoxide init --cmd cd bash)"
+export ANTHROPIC_API_KEY=`cat ~/.anthropic/api.key`
+export VOYAGE_API_KEY=`cat ~/.voyageai/api.key`
 
 # User specific environment and startup programs
 
@@ -40,3 +42,20 @@ eval "$(zoxide init --cmd cd bash)"
 
 # Langchain
 # export LANGCHAIN_API_KEY=`op read "op://Private/Langchain API key/credential"`
+# export PATH="/home/kk/.local/miniconda3/bin:$PATH"  # commented out by conda initialize
+
+# >>> conda initialize >>>
+# !! Contents within this block are managed by 'conda init' !!
+__conda_setup="$('/home/kk/.local/miniconda3/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+else
+    if [ -f "/home/kk/.local/miniconda3/etc/profile.d/conda.sh" ]; then
+        . "/home/kk/.local/miniconda3/etc/profile.d/conda.sh"
+    else
+        export PATH="/home/kk/.local/miniconda3/bin:$PATH"
+    fi
+fi
+unset __conda_setup
+# <<< conda initialize <<<
+

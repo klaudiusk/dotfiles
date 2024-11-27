@@ -10,6 +10,10 @@
     zoom_version: "6.1.11.1545"  # Change to current zoom version
     zoom_gpg_key_url: "https://zoom.us/linux/download/pubkey"
     mattermost_install_dir: "/opt/mattermost-desktop"
+    miniconda_version: "latest"
+    gsconnect_firewall_ports:
+      - { port: "1714-1764", protocol: "tcp" }
+      - { port: "1714-1764", protocol: "udp" }
 
   tasks:
     - name: Get my user
@@ -35,11 +39,12 @@
           - fzf
           - tmux
           - syncthing
-          - ffmpeg-free
           - zlib
           - zlib-devel
           - make
           - python3-psutil
+          - python3-neovim
+          - python3-devel
           - R
           - patch
           - bzip2
@@ -73,7 +78,6 @@
           - unar
           - neovim
           - ncdu
-          - 1password-cli
           - rust
           - cargo
           - texlive
@@ -82,6 +86,11 @@
           - texlive-geometry
           - texlive-xcolor
           - texlive-url
+          - ipython
+          - g++
+          - gnome-shell-extension-gsconnect
+          - gnome-extensions-app
+          - gnome-browser-connector
         state: present
 
     - name: Install DNF plugins core
@@ -232,11 +241,13 @@
 
     - name: Install 1Password
       ansible.builtin.dnf:
-        name: 1password
+        name: 
+          - 1password
+          - 1password-cli
         state: present
       when: onepassword_check.rc != 0
 
-    - name: Get latest Nextcloud AppImage version # update
+    - name: Get latest Nextcloud AppImage version
       ansible.builtin.uri:
         url: https://api.github.com/repos/nextcloud-releases/desktop/releases/latest
         return_content: yes
@@ -416,8 +427,6 @@
         extra_opts: [--strip-components=1]
       when: not mattermost_check.stat.exists
 
-    # change stuff here
-
     - name: Create Mattermost desktop entry
       ansible.builtin.template:
         src: mattermost_desktop_entry.j2
@@ -482,6 +491,13 @@
             state: present
           become: false
 
+        - name: Register custom keybinding
+          community.general.dconf:
+            key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings"
+            value: "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/']"
+            state: present
+          become: false
+
         - name: Alt-F1 shortcut for terminal binding
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/binding"
@@ -500,6 +516,27 @@
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/name"
             value: "'Open terminal'"
+            state: present
+          become: false
+
+        - name: Ctrl-Shift Space shortcut for 1password quick access binding
+          community.general.dconf:
+            key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/binding"
+            value: "'<Ctrl><Shift><Space>'"
+            state: present
+          become: false
+
+        - name: Ctrl-Shift Space shortcut for 1password quick access command
+          community.general.dconf:
+            key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/command"
+            value: "'1password --quick-access'"
+            state: present
+          become: false
+
+        - name: Ctrl-Shift Space shortcut for 1password quick access name
+          community.general.dconf:
+            key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/name"
+            value: "'1password quick access'"
             state: present
           become: false
 
@@ -534,7 +571,7 @@
         - name: Terminal profile font
           community.general.dconf:
             key: "/org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/font"
-            value: "'JetBrainsMono Nerd Font Mono 12'"
+            value: "'JetBrainsMono Nerd Font Mono 13'"
             state: present
           become: false
 
@@ -580,6 +617,59 @@
             state: present
           become: false
 
+        - name: Disable top left hot corner
+          community.general.dconf:
+            key: "/org/gnome/desktop/interface/enable-hot-corners"
+            value: "false"
+            state: present
+          become: false
+
+        - name: Set Caps Lock as keyboard layout switch
+          community.general.dconf:
+            key: "/org/gnome/desktop/input-sources/xkb-options"
+            value: "['grp:caps_toggle']"
+            state: present
+          become: false
+
+        - name: Set Miniconda install directory
+          ansible.builtin.set_fact:
+            miniconda_install_dir: "/home/{{ remote_regular_user }}/.local/miniconda3"
+
+        - name: Check if Miniconda is installed
+          ansible.builtin.stat:
+            path: "{{ miniconda_install_dir }}"
+          register: miniconda_check
+          become: false
+
+        - name: Download Miniconda installer
+          ansible.builtin.get_url:
+            url: https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+            dest: /tmp/miniconda.sh
+            mode: '0755'
+          when: not miniconda_check.stat.exists
+
+        - name: Install Miniconda
+          ansible.builtin.command:
+            cmd: /tmp/miniconda.sh -b -p {{ miniconda_install_dir }}
+            creates: "{{ miniconda_install_dir }}"
+          become: false
+          when: not miniconda_check.stat.exists
+
+        - name: Add Miniconda to PATH in .bashrc
+          ansible.builtin.lineinfile:
+            path: "/home/{{ remote_regular_user }}/.bashrc"
+            line: 'export PATH="{{ miniconda_install_dir }}/bin:$PATH"'
+            regexp: '^export PATH=.*miniconda3/bin'
+            state: present
+          become: false
+          when: not miniconda_check.stat.exists
+
+        - name: Initialize conda for bash shell
+          ansible.builtin.command:
+            cmd: "{{ miniconda_install_dir }}/bin/conda init bash"
+          become: false
+          when: not miniconda_check.stat.exists
+
         - name: Ensure Git remote URL for chezmoi repo is set to ssh url
           ansible.builtin.git_config:
             repo: "/home/{{ remote_regular_user }}/.local/share/chezmoi"
@@ -588,3 +678,73 @@
             scope: local
           register: git_config_result
           become: false
+
+    - name: Check if GSConnect is already installed
+      become: no
+      stat:
+        path: "~/.local/share/gnome-shell/extensions/gsconnect@andyholmes.github.io"
+      register: gsconnect_installed
+
+    - name: Install GSConnect and dependencies
+      dnf:
+        name:
+          - gnome-shell-extension-gsconnect
+          - gnome-extensions-app
+          - gnome-browser-connector
+        state: present
+      when: not gsconnect_installed.stat.exists
+
+    - name: Configure firewall rules
+      firewalld:
+        port: "{{ item.port }}/{{ item.protocol }}"
+        permanent: yes
+        state: enabled
+        zone: public
+        immediate: yes
+      with_items: "{{ gsconnect_firewall_ports }}"
+
+    - name: Reload firewall
+      command: firewall-cmd --reload
+
+    - name: Wait for GNOME Shell extensions directory
+      become: no
+      wait_for:
+        path: "~/.local/share/gnome-shell/extensions"
+        state: present
+        timeout: 10
+      ignore_errors: yes
+      when: not gsconnect_installed.stat.exists
+
+    - name: Restart GNOME Shell
+      become: no
+      shell: |
+        if pgrep -x "gnome-shell" > /dev/null; then
+          busctl --user call org.gnome.Shell /org/gnome/Shell org.gnome.Shell Eval s 'Meta.restart("Restarting…")'
+        fi
+      ignore_errors: yes
+      when: not gsconnect_installed.stat.exists
+
+    - name: Wait for GSConnect extension to be available
+      become: no
+      wait_for:
+        path: "~/.local/share/gnome-shell/extensions/gsconnect@andyholmes.github.io"
+        state: present
+        timeout: 30
+      ignore_errors: yes
+      when: not gsconnect_installed.stat.exists
+
+    - name: Enable GSConnect GNOME extension
+      become: no
+      command: gnome-extensions enable gsconnect@andyholmes.github.io
+      register: extension_result
+      changed_when: extension_result.rc == 0
+      failed_when: 
+        - extension_result.rc != 0 
+        - "'already enabled' not in extension_result.stderr"
+        - "'does not exist' not in extension_result.stderr"
+      ignore_errors: yes
+
+    - name: Notify user about logout requirement
+      debug:
+        msg: "Please log out and log back in to complete the GSConnect installation."
+      when: not gsconnect_installed.stat.exists
