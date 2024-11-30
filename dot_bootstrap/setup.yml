@@ -7,7 +7,7 @@
   vars:
     # flyctl_version: "0.1.130"
     pulumi_version: "v3.94.2"
-    zoom_version: "6.1.11.1545"  # Change to current zoom version
+    zoom_version: "6.2.11.5069"  # Change to current zoom version
     zoom_gpg_key_url: "https://zoom.us/linux/download/pubkey"
     mattermost_install_dir: "/opt/mattermost-desktop"
     miniconda_version: "latest"
@@ -450,25 +450,30 @@
         path: "{{ mattermost_install_dir }}/mattermost-desktop"
         mode: '0755'
 
-    - name: Check if Zoom is already installed
+    - name: Check installed Zoom version
       ansible.builtin.command: rpm -q zoom
       register: zoom_check
       ignore_errors: yes
       changed_when: false
+
+    - name: Get installed Zoom version if exists
+      ansible.builtin.set_fact:
+        installed_zoom_version: "{{ zoom_check.stdout | regex_search('zoom-([\\d.]+)', '\\1') | first }}"
+      when: zoom_check.rc == 0
 
     - name: Download Zoom RPM
       ansible.builtin.get_url:
         url: "https://zoom.us/client/{{ zoom_version }}/zoom_x86_64.rpm"
         dest: "/tmp/zoom_{{ zoom_version }}_x86_64.rpm"
         mode: '0644'
-      when: zoom_check.rc != 0
+      when: zoom_check.rc != 0 or (installed_zoom_version is defined and installed_zoom_version != zoom_version)
 
     - name: Install Zoom
       ansible.builtin.dnf:
         name: "/tmp/zoom_{{ zoom_version }}_x86_64.rpm"
         state: present
         disable_gpg_check: yes
-      when: zoom_check.rc != 0
+      when: zoom_check.rc != 0 or (installed_zoom_version is defined and installed_zoom_version != zoom_version)
 
     - name: Update desktop database
       ansible.builtin.command: update-desktop-database
