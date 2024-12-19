@@ -91,6 +91,7 @@
           - gnome-shell-extension-gsconnect
           - gnome-extensions-app
           - gnome-browser-connector
+          - hadolint
         state: present
 
     - name: Install DNF plugins core

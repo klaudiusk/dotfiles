@@ -35,6 +35,10 @@ eval "$(zoxide init --cmd cd bash)"
 export ANTHROPIC_API_KEY=`cat ~/.anthropic/api.key`
 export VOYAGE_API_KEY=`cat ~/.voyageai/api.key`
 
+export PYTHON_KEYRING_BACKEND=keyring.backends.SecretService.Keyring
+
+export GITHUB_TOKEN=`cat ~/.github/colinewo.api.key`
+
 # User specific environment and startup programs
 
 # OpenAI

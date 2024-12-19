@@ -1,0 +1,8 @@
+Host borgserver
+    HostName kalcher.one
+    User borg
+    IdentityFile ~/.ssh/id_borg
+    IdentityAgent none
+
+Host *
+	IdentityAgent ~/.1password/agent.sock
