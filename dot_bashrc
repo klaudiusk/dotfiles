@@ -32,12 +32,13 @@ if [ -f ~/.bash_aliases ]; then
 fi
 
 eval "$(zoxide init --cmd cd bash)"
-export ANTHROPIC_API_KEY=`cat ~/.anthropic/api.key`
-export VOYAGE_API_KEY=`cat ~/.voyageai/api.key`
+export ANTHROPIC_API_KEY=$([ -f ~/.anthropic/api.key ] && cat ~/.anthropic/api.key || echo "")
+export VOYAGE_API_KEY=$([ -f ~/.voyageai/api.key ] && cat ~/.voyageai/api.key || echo "")
+export AZURE_OPENAI_API_KEY=$([ -f ~/.azure_openai/api.key ] && cat ~/.azure_openai/api.key || echo "")
+export GITHUB_TOKEN=$([ -f ~/.github/colinewo.api.key ] && cat ~/.github/colinewo.api.key || echo "")
 
 export PYTHON_KEYRING_BACKEND=keyring.backends.SecretService.Keyring
 
-export GITHUB_TOKEN=`cat ~/.github/colinewo.api.key`
 
 # User specific environment and startup programs
 
@@ -46,6 +47,7 @@ export GITHUB_TOKEN=`cat ~/.github/colinewo.api.key`
 
 # Langchain
 # export LANGCHAIN_API_KEY=`op read "op://Private/Langchain API key/credential"`
+
 # export PATH="/home/kk/.local/miniconda3/bin:$PATH"  # commented out by conda initialize
 
 # >>> conda initialize >>>
@@ -63,3 +65,4 @@ fi
 unset __conda_setup
 # <<< conda initialize <<<
 
+conda activate 3-12

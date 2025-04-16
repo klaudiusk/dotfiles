@@ -1,4 +1,5 @@
 alias vim=nvim
 alias peu='poetry env use $(which python)'
 alias pei='poetry env info'
+alias ppython='poetry run python'
 

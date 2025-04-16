@@ -7,7 +7,7 @@
   vars:
     # flyctl_version: "0.1.130"
     pulumi_version: "v3.94.2"
-    zoom_version: "6.2.11.5069"  # Change to current zoom version
+    zoom_version: "6.4.5.1259"  # Change to current zoom version
     zoom_gpg_key_url: "https://zoom.us/linux/download/pubkey"
     mattermost_install_dir: "/opt/mattermost-desktop"
     miniconda_version: "latest"
@@ -279,58 +279,58 @@
         dest: "/usr/share/applications/nextcloud.desktop"
         mode: '0644'
 
-    - name: Get latest PyCharm version
-      ansible.builtin.uri:
-        url: https://data.services.jetbrains.com/products/releases?code=PCP&latest=true&type=release
-        return_content: yes
-      register: pycharm_version_response
-
-    - name: Set PyCharm version
-      ansible.builtin.set_fact:
-        pycharm_version: "{{ (pycharm_version_response.json.PCP | first).version }}"
-
-    - name: Check if PyCharm is already installed
-      ansible.builtin.stat:
-        path: "/home/{{ remote_regular_user }}/.local/pycharm-{{ pycharm_version }}"
-      register: pycharm_check
-
-    - name: Download and install PyCharm
-      block:
-        - name: Download PyCharm
-          ansible.builtin.get_url:
-            url: "https://download.jetbrains.com/python/pycharm-professional-{{ pycharm_version }}.tar.gz"
-            dest: "/tmp/pycharm-{{ pycharm_version }}.tar.gz"
-
-        - name: Ensure PyCharm directory exists
-          ansible.builtin.file:
-            path: "/home/{{ remote_regular_user }}/.local/"
-            state: directory
-            mode: '0755'
-            owner: "{{ remote_regular_user }}"
-
-        - name: Extract PyCharm
-          ansible.builtin.unarchive:
-            src: "/tmp/pycharm-{{ pycharm_version }}.tar.gz"
-            dest: "/home/{{ remote_regular_user }}/.local/"
-            remote_src: yes
-            owner: "{{ remote_regular_user }}"
-
-        - name: Create symbolic link to PyCharm
-          ansible.builtin.file:
-            src: "/home/{{ remote_regular_user }}/.local/pycharm-{{ pycharm_version }}"
-            dest: "/home/{{ remote_regular_user }}/.local/pycharm"
-            state: link
-            owner: "{{ remote_regular_user }}"
-
-        - name: Create PyCharm desktop entry
-          ansible.builtin.template:
-            src: pycharm_desktop_entry.j2
-            dest: "/home/{{ remote_regular_user }}/.local/share/applications/pycharm.desktop"
-            mode: '0644'
-            owner: "{{ remote_regular_user }}"
-          vars:
-            pycharm_dir: "/home/{{ remote_regular_user }}/.local/pycharm-{{ pycharm_version }}"
-      when: not pycharm_check.stat.exists
+#     - name: Get latest PyCharm version
+#       ansible.builtin.uri:
+#         url: https://data.services.jetbrains.com/products/releases?code=PCP&latest=true&type=release
+#         return_content: yes
+#       register: pycharm_version_response
+# 
+#     - name: Set PyCharm version
+#       ansible.builtin.set_fact:
+#         pycharm_version: "{{ (pycharm_version_response.json.PCP | first).version }}"
+# 
+#     - name: Check if PyCharm is already installed
+#       ansible.builtin.stat:
+#         path: "/home/{{ remote_regular_user }}/.local/pycharm-{{ pycharm_version }}"
+#       register: pycharm_check
+# 
+#     - name: Download and install PyCharm
+#       block:
+#         - name: Download PyCharm
+#           ansible.builtin.get_url:
+#             url: "https://download.jetbrains.com/python/pycharm-professional-{{ pycharm_version }}.tar.gz"
+#             dest: "/tmp/pycharm-{{ pycharm_version }}.tar.gz"
+# 
+#         - name: Ensure PyCharm directory exists
+#           ansible.builtin.file:
+#             path: "/home/{{ remote_regular_user }}/.local/"
+#             state: directory
+#             mode: '0755'
+#             owner: "{{ remote_regular_user }}"
+# 
+#         - name: Extract PyCharm
+#           ansible.builtin.unarchive:
+#             src: "/tmp/pycharm-{{ pycharm_version }}.tar.gz"
+#             dest: "/home/{{ remote_regular_user }}/.local/"
+#             remote_src: yes
+#             owner: "{{ remote_regular_user }}"
+# 
+#         - name: Create symbolic link to PyCharm
+#           ansible.builtin.file:
+#             src: "/home/{{ remote_regular_user }}/.local/pycharm-{{ pycharm_version }}"
+#             dest: "/home/{{ remote_regular_user }}/.local/pycharm"
+#             state: link
+#             owner: "{{ remote_regular_user }}"
+# 
+#         - name: Create PyCharm desktop entry
+#           ansible.builtin.template:
+#             src: pycharm_desktop_entry.j2
+#             dest: "/home/{{ remote_regular_user }}/.local/share/applications/pycharm.desktop"
+#             mode: '0644'
+#             owner: "{{ remote_regular_user }}"
+#           vars:
+#             pycharm_dir: "/home/{{ remote_regular_user }}/.local/pycharm-{{ pycharm_version }}"
+#       when: not pycharm_check.stat.exists
 
 #     - name: Check if the targeted version of flyctl is installed
 #       ansible.builtin.command: flyctl version
@@ -504,45 +504,73 @@
             state: present
           become: false
 
-        - name: Alt-F1 shortcut for terminal binding
+        - name: Hyper-F1 shortcut for terminal binding
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/binding"
-            value: "'<Alt>F1'"
+            value: "'<Control><Alt><Shift>t'"
             state: present
           become: false
 
-        - name: Alt-F1 shortcut for terminal command
+        - name: Hyper-F1 shortcut for terminal command
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/command"
             value: "'gnome-terminal -e tmux'"
             state: present
           become: false
 
-        - name: Alt-F1 shortcut for terminal name
+        - name: Hyper-F1 shortcut for terminal name
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/name"
             value: "'Open terminal'"
             state: present
           become: false
 
-        - name: Ctrl-Shift Space shortcut for 1password quick access binding
+        - name: Hyper-`.` shortcut for 1password quick access binding
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/binding"
-            value: "'<Ctrl><Shift><Space>'"
+            value: "'<Ctrl><Alt><Shift>.'"
             state: present
           become: false
 
-        - name: Ctrl-Shift Space shortcut for 1password quick access command
+        - name: Hyper-`.` shortcut for 1password quick access command
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/command"
             value: "'1password --quick-access'"
             state: present
           become: false
 
-        - name: Ctrl-Shift Space shortcut for 1password quick access name
+        - name: Hyper-`.` shortcut for 1password quick access name
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/name"
             value: "'1password quick access'"
+            state: present
+          become: false
+
+        - name: Set workspace left shortcut (vim h key)
+          community.general.dconf:
+            key: "/org/gnome/desktop/wm/keybindings/switch-to-workspace-left"
+            value: "['<Control><Alt><Shift>h']"
+            state: present
+          become: false
+
+        - name: Set workspace right shortcut (vim l key)
+          community.general.dconf:
+            key: "/org/gnome/desktop/wm/keybindings/switch-to-workspace-right"
+            value: "['<Control><Alt><Shift>l']"
+            state: present
+          become: false
+
+        - name: Set workspace up shortcut (vim k key)
+          community.general.dconf:
+            key: "/org/gnome/desktop/wm/keybindings/switch-to-workspace-up"
+            value: "['<Control><Alt><Shift>k']"
+            state: present
+          become: false
+
+        - name: Set workspace down shortcut (vim j key)
+          community.general.dconf:
+            key: "/org/gnome/desktop/wm/keybindings/switch-to-workspace-down"
+            value: "['<Control><Alt><Shift>j']"
             state: present
           become: false
 
