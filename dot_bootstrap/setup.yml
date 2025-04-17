@@ -15,6 +15,12 @@
       - { port: "1714-1764", protocol: "tcp" }
       - { port: "1714-1764", protocol: "udp" }
 
+  handlers:
+    - name: Notify GSConnect installation completion
+      ansible.builtin.debug:
+        msg: "GSConnect installation is complete. Please log out and log back in to activate the extension."
+      when: gsconnect_newly_installed | default(false)
+
   tasks:
     - name: Get my user
       ansible.builtin.set_fact:
@@ -500,79 +506,161 @@
         - name: Register custom keybinding
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings"
-            value: "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/']"
+            value: "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/']"
             state: present
           become: false
 
-        - name: Hyper-F1 shortcut for terminal binding
+        - name: Meh-T shortcut for terminal binding
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/binding"
             value: "'<Control><Alt><Shift>t'"
             state: present
           become: false
 
-        - name: Hyper-F1 shortcut for terminal command
+        - name: Meh-T shortcut for terminal command
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/command"
             value: "'gnome-terminal -e tmux'"
             state: present
           become: false
 
-        - name: Hyper-F1 shortcut for terminal name
+        - name: Meh-T shortcut for terminal name
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/name"
             value: "'Open terminal'"
             state: present
           become: false
 
-        - name: Hyper-`.` shortcut for 1password quick access binding
+        - name: Meh-`.` shortcut for 1password quick access binding
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/binding"
-            value: "'<Ctrl><Alt><Shift>.'"
+            value: "'<Ctrl><Alt><Shift>period'"
             state: present
           become: false
 
-        - name: Hyper-`.` shortcut for 1password quick access command
+        - name: Meh-`.` shortcut for 1password quick access command
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/command"
             value: "'1password --quick-access'"
             state: present
           become: false
 
-        - name: Hyper-`.` shortcut for 1password quick access name
+        - name: Meh-`.` shortcut for 1password quick access name
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/name"
             value: "'1password quick access'"
             state: present
           become: false
 
-        - name: Set workspace left shortcut (vim h key)
+        # random change to refresh
+        - name: Meta-Alt-k shortcut for keymapp binding
+          community.general.dconf:
+            key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/binding"
+            value: "'<Super><Alt>k'"
+            state: present
+          become: false
+
+        - name: Meta-Alt-k shortcut for keymapp command
+          community.general.dconf:
+            key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/command"
+            value: "'keymapp'"
+            state: present
+          become: false
+
+        - name: Meta-Alt-k shortcut for keymapp name
+          community.general.dconf:
+            key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/name"
+            value: "'Launch KeyMapp'"
+            state: present
+          become: false
+
+        # Workspace navigation (Super+Arrow)
+        - name: Set workspace left shortcut (Super+Left)
           community.general.dconf:
             key: "/org/gnome/desktop/wm/keybindings/switch-to-workspace-left"
+            value: "['<Super>Left']"
+            state: present
+          become: false
+
+        - name: Set workspace right shortcut (Super+Right)
+          community.general.dconf:
+            key: "/org/gnome/desktop/wm/keybindings/switch-to-workspace-right"
+            value: "['<Super>Right']"
+            state: present
+          become: false
+
+        - name: Set workspace up shortcut (Super+Up)
+          community.general.dconf:
+            key: "/org/gnome/desktop/wm/keybindings/switch-to-workspace-up"
+            value: "['<Super>Up']"
+            state: present
+          become: false
+
+        - name: Set workspace down shortcut (Super+Down)
+          community.general.dconf:
+            key: "/org/gnome/desktop/wm/keybindings/switch-to-workspace-down"
+            value: "['<Super>Down']"
+            state: present
+          become: false
+
+        # Moving windows between workspaces (Super+Shift+Arrow)
+        - name: Move window to workspace left (Super+Shift+Left)
+          community.general.dconf:
+            key: "/org/gnome/desktop/wm/keybindings/move-to-workspace-left"
+            value: "['<Super><Shift>Left']"
+            state: present
+          become: false
+
+        - name: Move window to workspace right (Super+Shift+Right)
+          community.general.dconf:
+            key: "/org/gnome/desktop/wm/keybindings/move-to-workspace-right"
+            value: "['<Super><Shift>Right']"
+            state: present
+          become: false
+
+        - name: Move window to workspace up (Super+Shift+Up)
+          community.general.dconf:
+            key: "/org/gnome/desktop/wm/keybindings/move-to-workspace-up"
+            value: "['<Super><Shift>Up']"
+            state: present
+          become: false
+
+        - name: Move window to workspace down (Super+Shift+Down)
+          community.general.dconf:
+            key: "/org/gnome/desktop/wm/keybindings/move-to-workspace-down"
+            value: "['<Super><Shift>Down']"
+            state: present
+          become: false
+
+        # Window snapping with Ctrl+Alt+Shift+hjkl (actual letters, not arrows)
+        - name: Snap window to left (Ctrl+Alt+Shift+h)
+          community.general.dconf:
+            key: "/org/gnome/desktop/wm/keybindings/move-to-side-w"
             value: "['<Control><Alt><Shift>h']"
             state: present
           become: false
 
-        - name: Set workspace right shortcut (vim l key)
+        - name: Snap window to right (Ctrl+Alt+Shift+l)
           community.general.dconf:
-            key: "/org/gnome/desktop/wm/keybindings/switch-to-workspace-right"
+            key: "/org/gnome/desktop/wm/keybindings/move-to-side-e"
             value: "['<Control><Alt><Shift>l']"
             state: present
           become: false
 
-        - name: Set workspace up shortcut (vim k key)
+        - name: Maximize window (Ctrl+Alt+Shift+k)
           community.general.dconf:
-            key: "/org/gnome/desktop/wm/keybindings/switch-to-workspace-up"
+            key: "/org/gnome/desktop/wm/keybindings/maximize"
             value: "['<Control><Alt><Shift>k']"
             state: present
           become: false
 
-        - name: Set workspace down shortcut (vim j key)
+        - name: Restore window (Ctrl+Alt+Shift+j)
           community.general.dconf:
-            key: "/org/gnome/desktop/wm/keybindings/switch-to-workspace-down"
+            key: "/org/gnome/desktop/wm/keybindings/unmaximize"
             value: "['<Control><Alt><Shift>j']"
             state: present
           become: false
+
 
         - name: Terminal profile background color
           community.general.dconf:
@@ -704,6 +792,27 @@
           become: false
           when: not miniconda_check.stat.exists
 
+        - name: Check if GSConnect is already installed
+          become: no
+          stat:
+            path: "~/.local/share/gnome-shell/extensions/gsconnect@andyholmes.github.io"
+          register: gsconnect_installed
+
+        - name: Set flag if GSConnect was not previously installed
+          ansible.builtin.set_fact:
+            gsconnect_newly_installed: true
+          when: not gsconnect_installed.stat.exists
+          notify: Notify GSConnect installation completion
+
+        - name: Configure firewall rules for GSConnect
+          firewalld:
+            port: "{{ item.port }}/{{ item.protocol }}"
+            permanent: yes
+            state: enabled
+            zone: public
+            immediate: yes
+          with_items: "{{ gsconnect_firewall_ports }}"
+
         - name: Ensure Git remote URL for chezmoi repo is set to ssh url
           ansible.builtin.git_config:
             repo: "/home/{{ remote_regular_user }}/.local/share/chezmoi"
@@ -713,72 +822,3 @@
           register: git_config_result
           become: false
 
-    - name: Check if GSConnect is already installed
-      become: no
-      stat:
-        path: "~/.local/share/gnome-shell/extensions/gsconnect@andyholmes.github.io"
-      register: gsconnect_installed
-
-    - name: Install GSConnect and dependencies
-      dnf:
-        name:
-          - gnome-shell-extension-gsconnect
-          - gnome-extensions-app
-          - gnome-browser-connector
-        state: present
-      when: not gsconnect_installed.stat.exists
-
-    - name: Configure firewall rules
-      firewalld:
-        port: "{{ item.port }}/{{ item.protocol }}"
-        permanent: yes
-        state: enabled
-        zone: public
-        immediate: yes
-      with_items: "{{ gsconnect_firewall_ports }}"
-
-    - name: Reload firewall
-      command: firewall-cmd --reload
-
-    - name: Wait for GNOME Shell extensions directory
-      become: no
-      wait_for:
-        path: "~/.local/share/gnome-shell/extensions"
-        state: present
-        timeout: 10
-      ignore_errors: yes
-      when: not gsconnect_installed.stat.exists
-
-    - name: Restart GNOME Shell
-      become: no
-      shell: |
-        if pgrep -x "gnome-shell" > /dev/null; then
-          busctl --user call org.gnome.Shell /org/gnome/Shell org.gnome.Shell Eval s 'Meta.restart("Restarting…")'
-        fi
-      ignore_errors: yes
-      when: not gsconnect_installed.stat.exists
-
-    - name: Wait for GSConnect extension to be available
-      become: no
-      wait_for:
-        path: "~/.local/share/gnome-shell/extensions/gsconnect@andyholmes.github.io"
-        state: present
-        timeout: 30
-      ignore_errors: yes
-      when: not gsconnect_installed.stat.exists
-
-    - name: Enable GSConnect GNOME extension
-      become: no
-      command: gnome-extensions enable gsconnect@andyholmes.github.io
-      register: extension_result
-      changed_when: extension_result.rc == 0
-      failed_when: 
-        - extension_result.rc != 0 
-        - "'already enabled' not in extension_result.stderr"
-        - "'does not exist' not in extension_result.stderr"
-      ignore_errors: yes
-
-    - name: Notify user about logout requirement
-      debug:
-        msg: "Please log out and log back in to complete the GSConnect installation."
-      when: not gsconnect_installed.stat.exists
