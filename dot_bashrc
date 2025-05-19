@@ -34,8 +34,11 @@ fi
 eval "$(zoxide init --cmd cd bash)"
 export ANTHROPIC_API_KEY=$([ -f ~/.anthropic/api.key ] && cat ~/.anthropic/api.key || echo "")
 export VOYAGE_API_KEY=$([ -f ~/.voyageai/api.key ] && cat ~/.voyageai/api.key || echo "")
+export KAGI_API_KEY=$([ -f ~/.kagi/api.key ] && cat ~/.kagi/api.key || echo "")
+export TAVILY_API_KEY=$([ -f ~/.tavily/api.key ] && cat ~/.tavily/api.key || echo "")
+
 export AZURE_OPENAI_API_KEY=$([ -f ~/.azure_openai/api.key ] && cat ~/.azure_openai/api.key || echo "")
-export GITHUB_TOKEN=$([ -f ~/.github/colinewo.api.key ] && cat ~/.github/colinewo.api.key || echo "")
+# export GITHUB_TOKEN=$([ -f ~/.github/colinewo.api.key ] && cat ~/.github/colinewo.api.key || echo "")
 
 export PYTHON_KEYRING_BACKEND=keyring.backends.SecretService.Keyring
 
@@ -66,3 +69,4 @@ unset __conda_setup
 # <<< conda initialize <<<
 
 conda activate 3-12
+export PATH=~/.npm-global/bin:$PATH

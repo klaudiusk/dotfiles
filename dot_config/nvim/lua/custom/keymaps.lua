@@ -18,7 +18,7 @@ vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' }
 
 vim.keymap.set('n', '<leader>h', ':bp<CR>')
 vim.keymap.set('n', '<leader>l', ':bn<CR>')
-vim.keymap.set('n', '<leader>q', ':bd<CR>')
+vim.keymap.set('n', '<leader>q', ':bd<CR>') -- close buffer
 
 -- Keybinds to make split navigation easier. -- redundant because of christoomey/vim-tmux-navigator
 --  Use CTRL+<hjkl> to switch between windows

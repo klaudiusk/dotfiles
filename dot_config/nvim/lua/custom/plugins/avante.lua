@@ -16,6 +16,7 @@ return {
       auto_set_keymaps = true,
       auto_apply_diff_after_generation = false,
       support_paste_from_clipboard = false,
+      enable_cursor_planning_mode = false
     },
     -- add any opts here
   },
