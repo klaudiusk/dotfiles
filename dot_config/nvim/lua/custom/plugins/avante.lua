@@ -6,7 +6,7 @@ return {
   opts = {
     provider = 'claude',
     claude = {
-      model = 'claude-3-7-sonnet-latest',
+      model = 'claude-sonnet-4-20250514',
       temperature = 0,
       max_tokens = 16386,
     },

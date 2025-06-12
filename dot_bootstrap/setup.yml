@@ -254,6 +254,7 @@
         state: present
       when: onepassword_check.rc != 0
 
+    # New version
     - name: Get latest Nextcloud AppImage version
       ansible.builtin.uri:
         url: https://api.github.com/repos/nextcloud-releases/desktop/releases/latest
