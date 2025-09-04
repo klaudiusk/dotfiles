@@ -1,9 +1,17 @@
 #!/bin/bash
 
-# .bootstrap/setup.yml hash: {{ include "dot_bootstrap/setup.yml" | sha256sum }}
-
+# Auto-detect environment and choose appropriate playbook
 if command -v ansible-playbook &> /dev/null; then
-    ansible-playbook {{ joinPath .chezmoi.sourceDir "dot_bootstrap/setup.yml" | quote }} --ask-become-pass
+    # Check if we're in a server environment (no GUI)
+    if ! command -v gnome-shell &> /dev/null && ! command -v kde-plasma-desktop &> /dev/null && [ -z "$DISPLAY" ]; then
+        echo "Detected server environment, using server playbook..."
+        # .bootstrap/setup_server.yml hash: {{ include "dot_bootstrap/setup_server.yml" | sha256sum }}
+        ansible-playbook {{ joinPath .chezmoi.sourceDir "dot_bootstrap/setup_server.yml" | quote }} --ask-become-pass
+    else
+        echo "Detected desktop environment, using desktop playbook..."
+        # .bootstrap/setup.yml hash: {{ include "dot_bootstrap/setup.yml" | sha256sum }}
+        ansible-playbook {{ joinPath .chezmoi.sourceDir "dot_bootstrap/setup.yml" | quote }} --ask-become-pass
+    fi
+else
+    echo "Ansible not found, please install it first"
 fi
-
-

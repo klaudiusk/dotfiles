@@ -1,34 +1,128 @@
 ---
-- name: Machine setup
+- name: Server setup
   hosts: localhost
-  become: true
+  become: false
   connection: local
   gather_facts: true
   vars:
-    # flyctl_version: "0.1.130"
-    pulumi_version: "v3.94.2"
+    # Server-specific versions
+    docker_compose_version: "v2.21.0"
+    # Conda environments to create
+    conda_environments:
+      - name: "3-11"
+        python_version: "3.11"
+      - name: "3-12"
+        python_version: "3.12"
+      - name: "3-13"
+        python_version: "3.13"
 
   tasks:
     - name: Get my user
       ansible.builtin.set_fact:
         remote_regular_user: "{{ ansible_env.SUDO_USER or ansible_user_id }}"
 
-    - name: Install packages
-      ansible.builtin.package:
+    # Core system packages - Ubuntu/Debian
+    - name: Install core packages on Ubuntu/Debian
+      ansible.builtin.apt:
         name:
+          # Core development tools
           - git
-          - htop
           - vim
+          - neovim
           - gcc
-          - ripgrep
-          - fzf
-          - tmux
-          - syncthing
+          - g++
           - make
+          - autoconf
           - patch
+          - curl
+          - wget
+          - unzip
+          - software-properties-common
+          - apt-transport-https
+          - ca-certificates
+          - gnupg
+          - lsb-release
+          # System monitoring and utilities
+          - htop
+          - btop
+          - ncdu
+          - tree
+          - iotop
+          - nethogs
+          # Shell enhancements
+          - tmux
+          - fzf
+          - ripgrep
+          - fd-find
+          - bash-completion
+          # Development libraries
+          - bzip2
+          - libbz2-dev
+          - libreadline-dev
+          - sqlite3
+          - libsqlite3-dev
+          - libssl-dev
+          - libffi-dev
+          - liblzma-dev
+          - uuid-dev
+          - libgdbm-dev
+          - libnss3-dev
+          - libncurses5-dev
+          - libncursesw5-dev
+          - libedit-dev
+          - libxml2-dev
+          - libxslt1-dev
+          # Python development
+          - python3
+          - python3-dev
+          - python3-pip
+          - python3-venv
+          - python3-psutil
+          - python3-neovim
+          # Additional utilities
+          - wl-clipboard
+          - unrar
+          - rsync
+          - screen
+          # Security
+          - unattended-upgrades
+        state: present
+        update_cache: yes
+      become: true
+      when: ansible_distribution in ['Ubuntu', 'Debian']
+
+    # Core system packages - Fedora
+    - name: Install core packages on Fedora
+      ansible.builtin.dnf:
+        name:
+          # Core development tools
+          - git
+          - vim
+          - neovim
+          - gcc
+          - gcc-c++
+          - make
+          - autoconf
+          - patch
+          - curl
+          - wget
+          - unzip
+          # System monitoring and utilities
+          - htop
+          - btop
+          - ncdu
+          - tree
+          - iotop
+          # Shell enhancements
+          - tmux
+          - fzf
+          - ripgrep
+          - fd-find
+          - bash-completion
+          # Development libraries
           - bzip2
           - bzip2-devel
-          - libreadline-dev
+          - readline-devel
           - sqlite
           - sqlite-devel
           - openssl-devel
@@ -37,150 +131,271 @@
           - libuuid-devel
           - gdbm-libs
           - libnsl2
-          - luarocks
-          - wl-clipboard
-          - fd-find
-          - gcc-c++
-          - doctl
-          - autoconf
           - ncurses-devel
-          - wxGTK-devel
-          - wxBase
-          - libiodbc
-          - unixODBC-devel.x86_64
-          - erlang-odbc.x86_64
-          - libxslt
-          - fop
-          - inotify-tools
-          - unar
-          - neovim
-          - ncdu
-        state: present
-
-    - name: Install packages
-      ansible.builtin.dnf:
-        name:
-          - R
-          - java-1.8.0-openjdk-devel
+          - libxml2-devel
+          - libxslt-devel
+          # Python development
+          - python3
+          - python3-devel
+          - python3-pip
           - python3-psutil
+          - python3-neovim
+          # Additional utilities
+          - wl-clipboard
+          - unar
+          - rsync
+          - screen
           - zlib
           - zlib-devel
-          - btop
+          # Tools from your original setup
           - poetry
           - zoxide
           - gh
           - helm
           - go-task
-      when: ansible_distribution == 'Fedora'
-
-    - name: Install DNF plugins core
-      ansible.builtin.dnf:
-        name: dnf-plugins-core
+          - doctl
         state: present
+      become: true
       when: ansible_distribution == 'Fedora'
 
-    - name: Uninstall nano-default-editor
-      ansible.builtin.dnf:
-        name: nano-default-editor
-        state: absent
-      when: ansible_distribution == 'Fedora'
+    # Install Poetry on Ubuntu (not in default repos in older versions)
+    - name: Install Poetry on Ubuntu
+      ansible.builtin.shell: |
+        curl -sSL https://install.python-poetry.org | python3 -
+      args:
+        creates: "{{ ansible_env.HOME }}/.local/bin/poetry"
+      become: false
+      when: ansible_distribution in ['Ubuntu', 'Debian']
 
-    - name: Add Docker repo
-      ansible.builtin.yum_repository:
-        name: docker
-        description: Docker repo
-        baseurl: "https://download.docker.com/linux/fedora/{{ ansible_distribution_major_version }}/{{ ansible_architecture }}/stable"
-        gpgkey: "https://download.docker.com/linux/fedora/gpg"
-        gpgcheck: true
-        enabled: true
-      when: ansible_distribution == "Fedora"
-
-    - name: Add Docker repo for Ubuntu
+    # Install zoxide on Ubuntu (not in default repos)
+    - name: Install zoxide on Ubuntu
       block:
-        - name: Add Docker GPG apt Key
-          ansible.builtin.apt_key:
-            url: https://download.docker.com/linux/ubuntu/gpg
-            state: present
+        - name: Download zoxide installer
+          ansible.builtin.get_url:
+            url: https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh
+            dest: /tmp/install-zoxide.sh
+            mode: '0755'
 
-        - name: Add Docker Repository
+        - name: Install zoxide
+          ansible.builtin.shell: /tmp/install-zoxide.sh
+          args:
+            creates: "{{ ansible_env.HOME }}/.local/bin/zoxide"
+          become: false
+      when: ansible_distribution in ['Ubuntu', 'Debian']
+
+    # Install GitHub CLI on Ubuntu
+    - name: Install GitHub CLI on Ubuntu
+      block:
+        - name: Create keyrings directory
+          ansible.builtin.file:
+            path: /usr/share/keyrings
+            state: directory
+            mode: '0755'
+          become: true
+
+        - name: Add GitHub CLI GPG key
+          ansible.builtin.get_url:
+            url: https://cli.github.com/packages/githubcli-archive-keyring.gpg
+            dest: /usr/share/keyrings/githubcli-archive-keyring.gpg
+            mode: '0644'
+          become: true
+
+        - name: Add GitHub CLI repository
           ansible.builtin.apt_repository:
-            repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+            repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main"
             state: present
-      when: ansible_distribution == 'Ubuntu'
+          become: true
 
-    - name: Install Docker
-      ansible.builtin.dnf:
-        name:
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
-          - docker-buildx-plugin
-          - docker-compose-plugin
-        state: present
+        - name: Install GitHub CLI
+          ansible.builtin.apt:
+            name: gh
+            state: present
+            update_cache: yes
+          become: true
+      when: ansible_distribution in ['Ubuntu', 'Debian']
+
+    # Docker installation - Ubuntu/Debian
+    - name: Install Docker on Ubuntu/Debian
+      block:
+        - name: Add Docker GPG key
+          ansible.builtin.get_url:
+            url: https://download.docker.com/linux/ubuntu/gpg
+            dest: /usr/share/keyrings/docker-archive-keyring.gpg
+            mode: '0644'
+          become: true
+
+        - name: Add Docker repository
+          ansible.builtin.apt_repository:
+            repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+            state: present
+          become: true
+
+        - name: Install Docker
+          ansible.builtin.apt:
+            name:
+              - docker-ce
+              - docker-ce-cli
+              - containerd.io
+              - docker-buildx-plugin
+              - docker-compose-plugin
+            state: present
+            update_cache: yes
+          become: true
+      when: ansible_distribution in ['Ubuntu', 'Debian']
+
+    # Docker installation - Fedora
+    - name: Install Docker on Fedora
+      block:
+        - name: Add Docker repo
+          ansible.builtin.yum_repository:
+            name: docker
+            description: Docker repo
+            baseurl: "https://download.docker.com/linux/fedora/{{ ansible_distribution_major_version }}/{{ ansible_architecture }}/stable"
+            gpgkey: "https://download.docker.com/linux/fedora/gpg"
+            gpgcheck: true
+            enabled: true
+
+        - name: Install Docker
+          ansible.builtin.dnf:
+            name:
+              - docker-ce
+              - docker-ce-cli
+              - containerd.io
+              - docker-buildx-plugin
+              - docker-compose-plugin
+            state: present
+      become: true
+      when: ansible_distribution == 'Fedora'
 
     - name: Add Docker group
       ansible.builtin.group:
         name: docker
         state: present
+      become: true
 
     - name: Add user to docker group
       ansible.builtin.user:
         name: "{{ remote_regular_user }}"
         groups: docker
         append: true
+      become: true
 
-#     - name: Check if Pulumi is installed
-#       ansible.builtin.command:
-#         cmd: pulumi version
-#       register: pulumi_installed
-#       ignore_errors: true
-#       changed_when: false
-# 
-#     - name: Download Pulumi SDK
-#       ansible.builtin.get_url:
-#         url: "https://get.pulumi.com/releases/sdk/pulumi-{{ pulumi_version }}-linux-x64.tar.gz"
-#         dest: "/tmp/pulumi-{{ pulumi_version }}-linux-x64.tar.gz"
-#         mode: "0644"
-#       when: pulumi_installed is failed or pulumi_installed.stdout is not search(pulumi_version)
-# 
-#     - name: Extract Pulumi to /usr/local/bin
-#       ansible.builtin.unarchive:
-#         src: "/tmp/pulumi-{{ pulumi_version }}-linux-x64.tar.gz"
-#         dest: /usr/local/bin
-#         extra_opts: [--strip-components=1]
-#         creates: /usr/local/bin/pulumi
-#       when: pulumi_installed is failed or pulumi_installed.stdout is not search(pulumi_version)
+    - name: Start and enable Docker service
+      ansible.builtin.systemd:
+        name: docker
+        state: started
+        enabled: true
+      become: true
 
-    - name: Ensure fonts directory
-      ansible.builtin.file:
-        path: "/home/{{ remote_regular_user }}/.fonts"
-        state: directory
-        mode: "0755"
-        owner: "{{ remote_regular_user }}"
+    # Install Miniconda
+    - name: Set Miniconda install directory
+      ansible.builtin.set_fact:
+        miniconda_install_dir: "{{ ansible_env.HOME }}/.local/miniconda3"
 
-    - name: Check if Jetbrains Mono exists
+    - name: Check if Miniconda is installed
+      ansible.builtin.stat:
+        path: "{{ miniconda_install_dir }}"
+      register: miniconda_check
+      become: false
+
+    - name: Download Miniconda installer
+      ansible.builtin.get_url:
+        url: https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+        dest: /tmp/miniconda.sh
+        mode: '0755'
+      when: not miniconda_check.stat.exists
+
+    - name: Install Miniconda
+      ansible.builtin.command:
+        cmd: /tmp/miniconda.sh -b -p {{ miniconda_install_dir }}
+        creates: "{{ miniconda_install_dir }}"
+      become: false
+      when: not miniconda_check.stat.exists
+
+    - name: Initialize conda for bash shell
+      ansible.builtin.command:
+        cmd: "{{ miniconda_install_dir }}/bin/conda init bash"
+      become: false
+      when: not miniconda_check.stat.exists
+
+    - name: Check existing conda environments
       ansible.builtin.find:
-        paths: "/home/{{ remote_regular_user }}/.fonts"
-        patterns: "JetBrainsMonoNerd*FontMono*"
-      register: jetbrains_mono_files
+        paths: "{{ miniconda_install_dir }}/envs"
+        file_type: directory
+      register: existing_conda_envs
       become: false
+      when: miniconda_check.stat.exists
 
-    - name: Download Jetbrains mono
-      ansible.builtin.unarchive:
-        src: https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/JetBrainsMono.zip
-        dest: "/home/{{ remote_regular_user }}/.fonts/"
-        remote_src: true
-        mode: "0755"
-        owner: "{{ remote_regular_user }}"
-      when: jetbrains_mono_files.matched == 0
-
-
-    - name: Ensure Git remote URL for chezmoi repo is set to ssh url
-      ansible.builtin.git_config:
-        repo: "/home/{{ remote_regular_user }}/.local/share/chezmoi"
-        name: remote.origin.url
-        value: git@github.com:klaudiusk/dotfiles.git
-        scope: local
-      register: git_config_result
+    - name: Create conda environments
+      ansible.builtin.command:
+        cmd: "{{ miniconda_install_dir }}/bin/conda create -n {{ item.name }} python={{ item.python_version }} -y"
       become: false
+      loop: "{{ conda_environments }}"
+      when: >
+        not miniconda_check.stat.exists or 
+        (existing_conda_envs.files | default([]) | selectattr('path', 'match', '.*/' + item.name + '$') | list | length == 0)
 
+    # Set up unattended upgrades for Ubuntu
+    - name: Configure unattended upgrades settings
+      ansible.builtin.copy:
+        content: |
+          Unattended-Upgrade::Allowed-Origins {
+                  "${distro_id}:${distro_codename}-security";
+                  "${distro_id}ESMApps:${distro_codename}-apps-security";
+                  "${distro_id}ESM:${distro_codename}-infra-security";
+          };
+          Unattended-Upgrade::AutoFixInterruptedDpkg "true";
+          Unattended-Upgrade::MinimalSteps "true";
+          Unattended-Upgrade::Remove-Unused-Dependencies "true";
+          Unattended-Upgrade::Automatic-Reboot "false";
+        dest: /etc/apt/apt.conf.d/50unattended-upgrades
+        mode: '0644'
+      become: true
+      when: ansible_distribution in ['Ubuntu', 'Debian']
+
+    # Create useful directories
+    - name: Create useful directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      become: false
+      loop:
+        - "{{ ansible_env.HOME }}/.local/bin"
+        - "{{ ansible_env.HOME }}/scripts"
+        - "{{ ansible_env.HOME }}/projects"
+
+    # Install Node.js (if you need it for development)
+    - name: Install Node.js on Ubuntu
+      block:
+        - name: Add NodeSource GPG key
+          ansible.builtin.get_url:
+            url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
+            dest: /usr/share/keyrings/nodesource.gpg
+            mode: '0644'
+          become: true
+
+        - name: Add NodeSource repository
+          ansible.builtin.apt_repository:
+            repo: "deb [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x {{ ansible_distribution_release }} main"
+            state: present
+          become: true
+
+        - name: Install Node.js
+          ansible.builtin.apt:
+            name: nodejs
+            state: present
+            update_cache: yes
+          become: true
+
+        - name: Create npm global directory
+          ansible.builtin.file:
+            path: "{{ ansible_env.HOME }}/.npm-global"
+            state: directory
+            mode: '0755'
+          become: false
+
+        - name: Configure npm to use global directory
+          ansible.builtin.shell: npm config set prefix '{{ ansible_env.HOME }}/.npm-global'
+          become: false
+      when: ansible_distribution in ['Ubuntu', 'Debian']---
