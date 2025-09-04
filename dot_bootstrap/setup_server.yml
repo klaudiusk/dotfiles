@@ -217,10 +217,20 @@
     # Docker installation - Ubuntu/Debian
     - name: Install Docker on Ubuntu/Debian
       block:
+        - name: Remove old Docker GPG key if it exists
+          ansible.builtin.file:
+            path: /usr/share/keyrings/docker-archive-keyring.gpg
+            state: absent
+          become: true
+
         - name: Add Docker GPG key
-          ansible.builtin.get_url:
-            url: https://download.docker.com/linux/ubuntu/gpg
-            dest: /usr/share/keyrings/docker-archive-keyring.gpg
+          ansible.builtin.shell: |
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+          become: true
+
+        - name: Set correct permissions on Docker GPG key
+          ansible.builtin.file:
+            path: /usr/share/keyrings/docker-archive-keyring.gpg
             mode: '0644'
           become: true
 
@@ -228,6 +238,11 @@
           ansible.builtin.apt_repository:
             repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
             state: present
+          become: true
+
+        - name: Update apt cache
+          ansible.builtin.apt:
+            update_cache: yes
           become: true
 
         - name: Install Docker
@@ -239,7 +254,6 @@
               - docker-buildx-plugin
               - docker-compose-plugin
             state: present
-            update_cache: yes
           become: true
       when: ansible_distribution in ['Ubuntu', 'Debian']
 
