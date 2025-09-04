@@ -19,7 +19,7 @@
   tasks:
     - name: Get my user
       ansible.builtin.set_fact:
-        remote_regular_user: "{{ ansible_env.SUDO_USER or ansible_user_id }}"
+        remote_regular_user: "{{ ansible_user_id }}"
 
     # Core system packages - Ubuntu/Debian
     - name: Install core packages on Ubuntu/Debian
