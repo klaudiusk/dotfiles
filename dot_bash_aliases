@@ -2,4 +2,9 @@ alias vim=nvim
 alias peu='poetry env use $(which python)'
 alias pei='poetry env info'
 alias ppython='poetry run python'
+#
+# Azure VM SSH alias
+alias sshbgb="ssh -i ~/.ssh/bgb-vm-ITBot-001_key.pem azureuser@172.162.242.127"
+export bgbkey="~/.ssh/bgb-vm-ITBot-001_key.pem"
+export bgbip="172.162.242.127"
 

@@ -70,3 +70,8 @@ unset __conda_setup
 
 conda activate 3-12
 export PATH=~/.npm-global/bin:$PATH
+
+. "$HOME/.atuin/bin/env"
+
+[[ -f ~/.bash-preexec.sh ]] && source ~/.bash-preexec.sh
+eval "$(atuin init bash)"
