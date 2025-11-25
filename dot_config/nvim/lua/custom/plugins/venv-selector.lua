@@ -26,7 +26,6 @@ return {
     parents = 0,
   },
   lazy = false,
-  branch = 'regexp', -- This is the regexp branch, use this for the new version
   config = function()
     local venv_selector = require('venv-selector')
 

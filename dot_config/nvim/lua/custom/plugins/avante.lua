@@ -5,10 +5,14 @@ return {
   version = false, -- set this if you want to always pull the latest change
   opts = {
     provider = 'claude',
-    claude = {
-      model = 'claude-sonnet-4-20250514',
-      temperature = 0,
-      max_tokens = 16386,
+    providers = {
+        claude = {
+        model = 'claude-sonnet-4-5-20250929',
+        extra_request_body = {
+          temperature = 0,
+          max_tokens = 64000,
+        }
+      },
     },
     behaviour = {
       auto_suggestions = false, -- Experimental stage
