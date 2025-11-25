@@ -7,7 +7,7 @@
   vars:
     # flyctl_version: "0.1.130"
     pulumi_version: "v3.94.2"
-    zoom_version: "6.4.6.1370"  # Change to current zoom version
+    zoom_version: "6.6.10.5815"  # Change to current zoom version
     zoom_gpg_key_url: "https://zoom.us/linux/download/pubkey"
     mattermost_install_dir: "/opt/mattermost-desktop"
     miniconda_version: "latest"
@@ -254,7 +254,7 @@
         state: present
       when: onepassword_check.rc != 0
 
-    # 16.6.1
+    # 4.0.1
     - name: Get latest Nextcloud AppImage version
       ansible.builtin.uri:
         url: https://api.github.com/repos/nextcloud-releases/desktop/releases/latest
