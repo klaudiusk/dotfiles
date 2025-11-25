@@ -79,6 +79,7 @@
           - python3-venv
           - python3-psutil
           - python3-neovim
+          - pipx
           # Additional utilities
           - wl-clipboard
           - unrar
@@ -140,6 +141,7 @@
           - python3-pip
           - python3-psutil
           - python3-neovim
+          - pipx
           # Additional utilities
           - wl-clipboard
           - unar
@@ -166,6 +168,22 @@
         creates: "{{ ansible_env.HOME }}/.local/bin/poetry"
       become: false
       when: ansible_distribution in ['Ubuntu', 'Debian']
+
+    # Install uv using pipx
+    - name: Ensure pipx path is set
+      ansible.builtin.command:
+        cmd: pipx ensurepath
+      become: false
+      register: pipx_ensurepath
+      changed_when: "'already in PATH' not in pipx_ensurepath.stdout"
+
+    - name: Install uv using pipx
+      ansible.builtin.command:
+        cmd: pipx install uv
+      become: false
+      register: pipx_install_uv
+      changed_when: pipx_install_uv.rc == 0
+      failed_when: pipx_install_uv.rc != 0 and 'already installed' not in pipx_install_uv.stderr
 
     # Install zoxide on Ubuntu (not in default repos)
     - name: Install zoxide on Ubuntu
@@ -412,4 +430,4 @@
         - name: Configure npm to use global directory
           ansible.builtin.shell: npm config set prefix '{{ ansible_env.HOME }}/.npm-global'
           become: false
-      when: ansible_distribution in ['Ubuntu', 'Debian']---
+      when: ansible_distribution in ['Ubuntu', 'Debian']
