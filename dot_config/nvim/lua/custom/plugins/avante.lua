@@ -6,8 +6,8 @@ return {
   opts = {
     provider = 'claude',
     providers = {
-        claude = {
-        model = 'claude-sonnet-4-5-20250929',
+    claude = {
+        model = 'claude-sonnet-4-6',
         extra_request_body = {
           temperature = 0,
           max_tokens = 64000,
@@ -28,12 +28,10 @@ return {
   build = 'make',
   dependencies = {
     'nvim-treesitter/nvim-treesitter',
-    'stevearc/dressing.nvim',
     'nvim-lua/plenary.nvim',
     'MunifTanjim/nui.nvim',
     --- The below dependencies are optional,
     'nvim-tree/nvim-web-devicons', -- or echasnovski/mini.icons
-    'zbirenbaum/copilot.lua', -- for providers='copilot'
     {
       -- support for image pasting
       'HakonHarnes/img-clip.nvim',
