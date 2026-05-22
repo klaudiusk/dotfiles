@@ -31,7 +31,6 @@ if [ -f ~/.bash_aliases ]; then
     . ~/.bash_aliases
 fi
 
-eval "$(zoxide init --cmd cd bash)"
 export ANTHROPIC_API_KEY=$([ -f ~/.anthropic/api.key ] && cat ~/.anthropic/api.key || echo "")
 export VOYAGE_API_KEY=$([ -f ~/.voyageai/api.key ] && cat ~/.voyageai/api.key || echo "")
 export KAGI_API_KEY=$([ -f ~/.kagi/api.key ] && cat ~/.kagi/api.key || echo "")
@@ -53,6 +52,11 @@ export PYTHON_KEYRING_BACKEND=keyring.backends.SecretService.Keyring
 
 # export PATH="/home/kk/.local/miniconda3/bin:$PATH"  # commented out by conda initialize
 
+claude-ankura() {
+  PGPASSWORD=$(secret-tool lookup service postgres user impact) claude "$@"
+}
+
+
 # >>> conda initialize >>>
 # !! Contents within this block are managed by 'conda init' !!
 __conda_setup="$('/home/kk/.local/miniconda3/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
@@ -71,7 +75,18 @@ unset __conda_setup
 conda activate 3-12
 export PATH=~/.npm-global/bin:$PATH
 
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+
 . "$HOME/.atuin/bin/env"
 
 [[ -f ~/.bash-preexec.sh ]] && source ~/.bash-preexec.sh
 eval "$(atuin init bash)"
+
+# Added by Raindrop installer
+export PATH="$HOME/.raindrop/bin:$PATH"
+# End Raindrop installer
+
+if [[ "$CLAUDECODE" != "1" ]]; then
+    eval "$(zoxide init --cmd cd zsh)"
+fi
