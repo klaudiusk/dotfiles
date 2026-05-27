@@ -88,5 +88,5 @@ export PATH="$HOME/.raindrop/bin:$PATH"
 # End Raindrop installer
 
 if [[ "$CLAUDECODE" != "1" ]]; then
-    eval "$(zoxide init --cmd cd zsh)"
+    eval "$(zoxide init --cmd cd bash)"
 fi
