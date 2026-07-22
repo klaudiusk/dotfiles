@@ -4,10 +4,11 @@
   become: true
   connection: local
   gather_facts: true
+  # edited 2026-06-30
   vars:
     # flyctl_version: "0.1.130"
     pulumi_version: "v3.94.2"
-    zoom_version: "7.0.0.1666"  # Change to current zoom version
+    zoom_version: "7.1.0.3715"  # Change to current zoom version
     zoom_gpg_key_url: "https://zoom.us/linux/download/pubkey"
     mattermost_install_dir: "/opt/mattermost-desktop"
     miniconda_version: "latest"
@@ -506,7 +507,7 @@
         - name: Register custom keybinding
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings"
-            value: "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/']"
+            value: "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/']"
             state: present
           become: false
 
@@ -528,6 +529,27 @@
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/name"
             value: "'Open terminal'"
+            state: present
+          become: false
+
+        - name: Meh-H shortcut for herdr binding
+          community.general.dconf:
+            key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/binding"
+            value: "'<Control><Alt><Shift>h'"
+            state: present
+          become: false
+
+        - name: Meh-H shortcut for herdr command
+          community.general.dconf:
+            key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/command"
+            value: "'gnome-terminal -e herdr'"
+            state: present
+          become: false
+
+        - name: Meh-T shortcut for herdr name
+          community.general.dconf:
+            key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/name"
+            value: "'Open terminal with herdr'"
             state: present
           become: false
 
