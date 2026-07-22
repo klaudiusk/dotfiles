@@ -532,21 +532,21 @@
             state: present
           become: false
 
-        - name: Meh-H shortcut for herdr binding
+        - name: Meh-G shortcut for herdr binding
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/binding"
-            value: "'<Control><Alt><Shift>h'"
+            value: "'<Control><Alt><Shift>g'"
             state: present
           become: false
 
-        - name: Meh-H shortcut for herdr command
+        - name: Meh-G shortcut for herdr command
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/command"
             value: "'gnome-terminal -e herdr'"
             state: present
           become: false
 
-        - name: Meh-T shortcut for herdr name
+        - name: Meh-G shortcut for herdr name
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/name"
             value: "'Open terminal with herdr'"
