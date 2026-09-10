@@ -33,14 +33,14 @@ return {
 
   -- mason: installs LSP servers, formatters, linters
   {
-    'williamboman/mason.nvim',
+    'mason-org/mason.nvim',
     opts = {},
   },
 
   -- mason-tool-installer: ensures specific tools are installed
   {
     'WhoIsSethDaniel/mason-tool-installer.nvim',
-    dependencies = { 'williamboman/mason.nvim' },
+    dependencies = { 'mason-org/mason.nvim' },
     opts = {
       ensure_installed = {
         -- LSP servers
@@ -61,14 +61,12 @@ return {
   {
     'mason-org/mason-lspconfig.nvim',
     dependencies = {
-      'williamboman/mason.nvim',
+      'mason-org/mason.nvim',
       'neovim/nvim-lspconfig',
     },
     opts = {
       -- Automatically call vim.lsp.enable() for installed servers
-      automatic_enable = {
-        exclude = { 'stylua' },
-      },
+      automatic_enable = true,
     },
   },
 
@@ -142,7 +140,7 @@ return {
           local client = vim.lsp.get_client_by_id(event.data.client_id)
           if
             client
-            and client.supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight)
+            and client:supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight)
           then
             local highlight_augroup =
               vim.api.nvim_create_augroup('kickstart-lsp-highlight', { clear = false })
@@ -169,7 +167,7 @@ return {
           end
 
           -- Toggle inlay hints (if supported)
-          if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
+          if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
             map('<leader>th', function()
               vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled({ bufnr = event.buf }))
             end, '[T]oggle Inlay [H]ints')

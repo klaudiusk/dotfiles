@@ -165,6 +165,56 @@ require('lazy').setup({
         topdelete = { text = '‾' },
         changedelete = { text = '~' },
       },
+      -- Hunk keymaps live under <leader>g next to the diffview ones
+      -- (<leader>gd/gD/gh/gH). <leader>h is taken by buffer navigation.
+      on_attach = function(bufnr)
+        local gitsigns = require('gitsigns')
+
+        local function map(mode, l, r, opts)
+          opts = opts or {}
+          opts.buffer = bufnr
+          vim.keymap.set(mode, l, r, opts)
+        end
+
+        -- Navigation
+        map('n', ']c', function()
+          if vim.wo.diff then
+            vim.cmd.normal({ ']c', bang = true })
+          else
+            gitsigns.nav_hunk('next')
+          end
+        end, { desc = 'Jump to next git [c]hange' })
+
+        map('n', '[c', function()
+          if vim.wo.diff then
+            vim.cmd.normal({ '[c', bang = true })
+          else
+            gitsigns.nav_hunk('prev')
+          end
+        end, { desc = 'Jump to previous git [c]hange' })
+
+        -- Actions: visual mode
+        map('v', '<leader>gs', function()
+          gitsigns.stage_hunk({ vim.fn.line('.'), vim.fn.line('v') })
+        end, { desc = 'git [s]tage selected lines' })
+        map('v', '<leader>gr', function()
+          gitsigns.reset_hunk({ vim.fn.line('.'), vim.fn.line('v') })
+        end, { desc = 'git [r]eset selected lines' })
+        -- Actions: normal mode (stage_hunk toggles: on a staged hunk it unstages)
+        map('n', '<leader>gs', gitsigns.stage_hunk, { desc = 'git [s]tage/unstage hunk' })
+        map('n', '<leader>gr', gitsigns.reset_hunk, { desc = 'git [r]eset hunk' })
+        map('n', '<leader>gS', gitsigns.stage_buffer, { desc = 'git [S]tage buffer' })
+        map('n', '<leader>gR', gitsigns.reset_buffer, { desc = 'git [R]eset buffer' })
+        map('n', '<leader>gp', gitsigns.preview_hunk, { desc = 'git [p]review hunk' })
+        map('n', '<leader>gb', gitsigns.blame_line, { desc = 'git [b]lame line' })
+        -- Toggles
+        map(
+          'n',
+          '<leader>tb',
+          gitsigns.toggle_current_line_blame,
+          { desc = '[T]oggle git show [b]lame line' }
+        )
+      end,
     },
   },
 
@@ -191,18 +241,15 @@ require('lazy').setup({
 
       -- Document existing key chains
       require('which-key').add({
-        { '<leader>c', group = '[C]ode' },
+        { '<leader>c', group = '[C]ode / [C]laude' },
         { '<leader>d', group = '[D]ocument' },
+        { '<leader>g', group = '[G]it', mode = { 'n', 'v' } },
         { '<leader>r', group = '[R]ename' },
         { '<leader>s', group = '[S]earch' },
-        { '<leader>w', group = '[W]orkspace' },
         { '<leader>t', group = '[T]oggle' },
-        { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
-        { 'g', group = '[S]urround commands' },
-        { 'g', desc = 's' },
-        { 'ga', group = '[A]dd Surround' },
-        { 'gd', group = '[D]elete Surround' },
-        { 'gr', group = '[R]eplace Surround' },
+        { '<leader>w', group = '[W]orkspace' },
+        { '<leader>y', group = '[Y]ank path' },
+        { 'gs', group = '[S]urround (mini.surround)' },
       })
     end,
   },
@@ -222,7 +269,7 @@ require('lazy').setup({
       {
         '<leader>f',
         function()
-          require('conform').format({ async = true, lsp_fallback = true })
+          require('conform').format({ async = true, lsp_format = 'fallback' })
         end,
         mode = '',
         desc = '[F]ormat buffer',
@@ -231,13 +278,13 @@ require('lazy').setup({
     opts = {
       notify_on_error = false,
       format_on_save = function(bufnr)
-        -- Disable "format_on_save lsp_fallback" for languages that don't
-        -- have a well standardized coding style. You can add additional
-        -- languages here or re-enable it for the disabled ones.
+        -- Don't fall back to LSP formatting for languages that don't have a
+        -- well standardized coding style. You can add additional languages
+        -- here or re-enable it for the disabled ones.
         local disable_filetypes = { c = true, cpp = true }
         return {
           timeout_ms = 500,
-          lsp_fallback = not disable_filetypes[vim.bo[bufnr].filetype],
+          lsp_format = disable_filetypes[vim.bo[bufnr].filetype] and 'never' or 'fallback',
         }
       end,
       formatters_by_ft = {
@@ -407,20 +454,6 @@ require('lazy').setup({
       })
     end,
   },
-
-  -- The following two comments only work if you have downloaded the kickstart repo, not just copy pasted the
-  -- init.lua. If you want these files, they are in the repository, so you can just download them and
-  -- place them in the correct locations.
-
-  -- NOTE: Next step on your Neovim journey: Add/Configure additional plugins for Kickstart
-  --
-  --  Here are some example plugins that I've included in the Kickstart repository.
-  --  Uncomment any of the lines below to enable them (you will need to restart nvim).
-  --
-  -- require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
-  -- require 'kickstart.plugins.lint',
-  -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
   --  Add your plugins to `lua/custom/plugins/*.lua` to get going.
   --    For additional information, see `:help lazy.nvim-lazy.nvim-structuring-your-plugins`

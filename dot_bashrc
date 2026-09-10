@@ -7,10 +7,18 @@ fi
 
 export EDITOR="/usr/bin/nvim"
 
+# Prepend a directory to PATH unless it is already there. Nested shells
+# (tmux -> nvim terminal -> Claude Code ...) re-source this file, so every
+# unconditional prepend would add one duplicate entry per level.
+pathadd() {
+    case ":$PATH:" in
+        *":$1:"*) ;;
+        *) PATH="$1:$PATH" ;;
+    esac
+}
+
 # User specific environment
-if ! [[ "$PATH" =~ "$HOME/.local/bin:" ]]; then
-    PATH="$HOME/.local/bin:$PATH"
-fi
+pathadd "$HOME/.local/bin"
 export PATH
 
 # Uncomment the following line if you don't like systemctl's auto-paging feature:
@@ -40,45 +48,56 @@ export AZURE_OPENAI_API_KEY=$([ -f ~/.azure_openai/api.key ] && cat ~/.azure_ope
 
 export PYTHON_KEYRING_BACKEND=keyring.backends.SecretService.Keyring
 
-# export PATH="/home/kk/.local/miniconda3/bin:$PATH"  # commented out by conda initialize
-
 claude-ankura() {
   PGPASSWORD=$(secret-tool lookup service postgres user impact) claude "$@"
 }
 
-# >>> conda initialize >>>
-# !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$('/home/kk/.local/miniconda3/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "/home/kk/.local/miniconda3/etc/profile.d/conda.sh" ]; then
-        . "/home/kk/.local/miniconda3/etc/profile.d/conda.sh"
-    else
-        export PATH="/home/kk/.local/miniconda3/bin:$PATH"
-    fi
-fi
-unset __conda_setup
-# <<< conda initialize <<<
+# conda: initialised lazily on first use. `conda shell.bash hook` costs about
+# 150 ms per shell start (most of the total) and auto_activate_base is off, so
+# nothing is lost by deferring it. Running `conda init bash` again would put
+# the eager block back; don't.
+conda() {
+    unset -f conda
+    eval "$("$HOME/.local/miniconda3/bin/conda" shell.bash hook 2>/dev/null)"
+    conda "$@"
+}
 
-export PATH=~/.npm-global/bin:$PATH
+pathadd "$HOME/.npm-global/bin"
 
 export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
+pathadd "$BUN_INSTALL/bin"
 
 . "$HOME/.atuin/bin/env"
 
 [[ -f ~/.bash-preexec.sh ]] && source ~/.bash-preexec.sh
 eval "$(atuin init bash)"
 
-
 if [[ "$CLAUDECODE" != "1" ]]; then
     eval "$(zoxide init --cmd cd bash)"
 fi
 
-# fnm
-FNM_PATH="/home/kk/.local/share/fnm"
+# fnm (Node version manager)
+FNM_PATH="$HOME/.local/share/fnm"
 if [ -d "$FNM_PATH" ]; then
-  export PATH="$FNM_PATH:$PATH"
-  eval "$(fnm env --use-on-cd --shell bash)"
+    pathadd "$FNM_PATH"
+    # A nested shell inherits its ancestors' multishell dirs in PATH; drop them
+    # so `fnm env` does not stack another one per shell level.
+    if [ -n "$FNM_MULTISHELL_PATH" ]; then
+        PATH=$(printf '%s' "$PATH" | awk -v RS=: -v ORS=: '!/\/fnm_multishells\//' | sed 's/:$//')
+    fi
+    eval "$(fnm env --use-on-cd --shell bash)"
+    # --use-on-cd installs `alias cd=__fnmcd`, which shadows zoxide's cd
+    # function. Keep zoxide's cd and run fnm's per-directory switch from it.
+    if declare -F __zoxide_cd >/dev/null; then
+        unalias cd
+        __zoxide_cd() {
+            \builtin cd -- "$@" && __fnm_use_if_file_found
+        }
+    fi
 fi
+
+# Finally drop duplicate PATH entries, keeping the first occurrence. pathadd
+# prevents new duplicates, but an inherited PATH (e.g. from a long-running tmux
+# server started by an older shell) may already carry some.
+PATH=$(printf '%s' "$PATH" | awk -v RS=: -v ORS=: '!seen[$0]++' | sed 's/:$//')
+export PATH

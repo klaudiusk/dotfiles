@@ -28,7 +28,7 @@ return {
   },
   {
     'mfussenegger/nvim-dap-python',
-    df = 'python',
+    ft = 'python',
     dependencies = {
       'mfussenegger/nvim-dap',
       'rcarriga/nvim-dap-ui',

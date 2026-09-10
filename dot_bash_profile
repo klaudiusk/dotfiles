@@ -1,13 +1,6 @@
 # .bash_profile
 
-# Get the aliases and functions
+# Get the aliases and functions (PATH, atuin, bun, fnm are all set up there)
 if [ -f ~/.bashrc ]; then
     . ~/.bashrc
 fi
-
-
-. "$HOME/.atuin/bin/env"
-
-# bun
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
