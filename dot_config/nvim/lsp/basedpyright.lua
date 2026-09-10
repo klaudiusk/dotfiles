@@ -9,7 +9,8 @@ return {
     if vim.fn.filereadable(nvim_lua) == 1 then
       local config = dofile(nvim_lua)
       if config and config.settings then
-        client.config.settings = vim.tbl_deep_extend('force', client.config.settings, config.settings)
+        client.config.settings =
+          vim.tbl_deep_extend('force', client.config.settings, config.settings)
         client.notify('workspace/didChangeConfiguration', { settings = client.config.settings })
       end
     end

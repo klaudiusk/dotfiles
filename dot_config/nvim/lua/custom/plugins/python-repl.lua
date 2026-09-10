@@ -14,8 +14,18 @@ return {
       vsplit = false,
     })
 
-    vim.keymap.set('n', '<leader>e', python_repl.send_statement_definition, { desc = 'Send line to Python REPL' })
-    vim.keymap.set('v', '<leader>e', python_repl.send_visual_to_repl, { desc = 'Send visual selection to Python REPL' })
+    vim.keymap.set(
+      'n',
+      '<leader>e',
+      python_repl.send_statement_definition,
+      { desc = 'Send line to Python REPL' }
+    )
+    vim.keymap.set(
+      'v',
+      '<leader>e',
+      python_repl.send_visual_to_repl,
+      { desc = 'Send visual selection to Python REPL' }
+    )
     vim.keymap.set('n', '<leader>pp', python_repl.open_repl, { desc = 'Toggle Python REPL' })
 
     vim.keymap.set('n', '<leader>pr', function()

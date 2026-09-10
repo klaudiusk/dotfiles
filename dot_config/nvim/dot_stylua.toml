@@ -1,0 +1,15 @@
+# Column width at which to wrap code
+column_width = 100
+# Use spaces instead of tabs
+indent_type = "Spaces"
+# Use 2 spaces for indentation
+indent_width = 2
+# Whether to collapse simple statements into a single line
+collapse_simple_statement = "Never"
+# Quote style for strings
+quote_style = "AutoPreferSingle"
+# Line endings style
+line_endings = "Unix"
+# Call parentheses style
+call_parentheses = "Always"
+

@@ -6,12 +6,12 @@ return {
   opts = {
     provider = 'claude',
     providers = {
-    claude = {
+      claude = {
         model = 'claude-sonnet-4-6',
         extra_request_body = {
           temperature = 0,
           max_tokens = 64000,
-        }
+        },
       },
     },
     behaviour = {
@@ -20,7 +20,7 @@ return {
       auto_set_keymaps = true,
       auto_apply_diff_after_generation = false,
       support_paste_from_clipboard = false,
-      enable_cursor_planning_mode = false
+      enable_cursor_planning_mode = false,
     },
     -- add any opts here
   },
@@ -47,13 +47,6 @@ return {
         },
       },
     },
-    {
-      -- Make sure to set this up properly if you have lazy=true
-      'MeanderingProgrammer/render-markdown.nvim',
-      opts = {
-        file_types = { 'markdown', 'Avante' },
-      },
-      ft = { 'markdown', 'Avante' },
-    },
+    -- render-markdown.nvim is configured in lua/custom/plugins/render-markdown.lua
   },
 }

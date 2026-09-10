@@ -104,12 +104,24 @@ return {
           -- Navigation (using snacks.picker if available, fallback to vim.lsp.buf)
           local snacks_ok, Snacks = pcall(require, 'snacks')
           if snacks_ok and Snacks.picker then
-            map('gd', function() Snacks.picker.lsp_definitions() end, '[G]oto [D]efinition')
-            map('gr', function() Snacks.picker.lsp_references() end, '[G]oto [R]eferences')
-            map('gI', function() Snacks.picker.lsp_implementations() end, '[G]oto [I]mplementation')
-            map('<leader>D', function() Snacks.picker.lsp_type_definitions() end, 'Type [D]efinition')
-            map('<leader>ds', function() Snacks.picker.lsp_symbols() end, '[D]ocument [S]ymbols')
-            map('<leader>sS', function() Snacks.picker.lsp_workspace_symbols() end, '[W]orkspace [S]ymbols')
+            map('gd', function()
+              Snacks.picker.lsp_definitions()
+            end, '[G]oto [D]efinition')
+            map('gr', function()
+              Snacks.picker.lsp_references()
+            end, '[G]oto [R]eferences')
+            map('gI', function()
+              Snacks.picker.lsp_implementations()
+            end, '[G]oto [I]mplementation')
+            map('<leader>D', function()
+              Snacks.picker.lsp_type_definitions()
+            end, 'Type [D]efinition')
+            map('<leader>ds', function()
+              Snacks.picker.lsp_symbols()
+            end, '[D]ocument [S]ymbols')
+            map('<leader>sS', function()
+              Snacks.picker.lsp_workspace_symbols()
+            end, '[W]orkspace [S]ymbols')
           else
             -- Fallback to built-in LSP if snacks isn't loaded
             map('gd', vim.lsp.buf.definition, '[G]oto [D]efinition')
@@ -128,8 +140,12 @@ return {
 
           -- Highlight references under cursor
           local client = vim.lsp.get_client_by_id(event.data.client_id)
-          if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight) then
-            local highlight_augroup = vim.api.nvim_create_augroup('kickstart-lsp-highlight', { clear = false })
+          if
+            client
+            and client.supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight)
+          then
+            local highlight_augroup =
+              vim.api.nvim_create_augroup('kickstart-lsp-highlight', { clear = false })
             vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
               buffer = event.buf,
               group = highlight_augroup,
@@ -144,7 +160,10 @@ return {
               group = vim.api.nvim_create_augroup('kickstart-lsp-detach', { clear = true }),
               callback = function(event2)
                 vim.lsp.buf.clear_references()
-                vim.api.nvim_clear_autocmds({ group = 'kickstart-lsp-highlight', buffer = event2.buf })
+                vim.api.nvim_clear_autocmds({
+                  group = 'kickstart-lsp-highlight',
+                  buffer = event2.buf,
+                })
               end,
             })
           end

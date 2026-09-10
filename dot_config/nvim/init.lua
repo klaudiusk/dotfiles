@@ -109,7 +109,8 @@ require('custom.yank-path')
 local lazypath = vim.fn.stdpath('data') .. '/lazy/lazy.nvim'
 if not vim.uv.fs_stat(lazypath) then
   local lazyrepo = 'https://github.com/folke/lazy.nvim.git'
-  local out = vim.fn.system({ 'git', 'clone', '--filter=blob:none', '--branch=stable', lazyrepo, lazypath })
+  local out =
+    vim.fn.system({ 'git', 'clone', '--filter=blob:none', '--branch=stable', lazyrepo, lazypath })
   if vim.v.shell_error ~= 0 then
     error('Error cloning lazy.nvim:\n' .. out)
   end
@@ -197,13 +198,12 @@ require('lazy').setup({
         { '<leader>w', group = '[W]orkspace' },
         { '<leader>t', group = '[T]oggle' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
-          { "g", group = "[S]urround commands" },
-          { "g", desc = "s" },
-          { "ga", group = "[A]dd Surround" },
-          { "gd", group = "[D]elete Surround" },
-          { "gr", group = "[R]eplace Surround" },
+        { 'g', group = '[S]urround commands' },
+        { 'g', desc = 's' },
+        { 'ga', group = '[A]dd Surround' },
+        { 'gd', group = '[D]elete Surround' },
+        { 'gr', group = '[R]eplace Surround' },
       })
-
     end,
   },
 
@@ -325,46 +325,86 @@ require('lazy').setup({
     end,
   },
   { -- Highlight, edit, and navigate code
+    -- nvim-treesitter `main` branch (Neovim 0.12+). The plugin is now only a parser/query
+    -- installer plus an experimental indentexpr; highlighting itself is Neovim's
+    -- vim.treesitter.start(). It cannot be lazy-loaded. See `:h nvim-treesitter`.
     'nvim-treesitter/nvim-treesitter',
+    branch = 'main',
+    lazy = false,
     build = ':TSUpdate',
-    opts = {
-      ensure_installed = {
+    config = function()
+      local ts = require('nvim-treesitter')
+      -- Parsers compile into this directory (prepended to 'runtimepath').
+      ts.setup({ install_dir = vim.fn.stdpath('data') .. '/site' })
+
+      -- Parsers to keep installed. Anything else installs on demand (see the autocmd below).
+      local wanted = {
         'bash',
         'c',
+        'css',
+        'csv',
         'diff',
+        'dockerfile',
+        'elixir',
+        'gitcommit',
+        'gitignore',
         'html',
+        'ini',
+        'json',
+        'latex',
         'lua',
-        'python',
         'luadoc',
+        'make',
         'markdown',
         'markdown_inline',
+        'nginx',
+        'python',
         'query',
+        'regex',
+        'requirements',
+        'sql',
+        'ssh_config',
+        'tmux',
+        'toml',
+        'tsx',
         'vim',
         'vimdoc',
-      },
-      -- Autoinstall languages that are not installed
-      auto_install = true,
-      highlight = {
-        enable = true,
-        -- Some languages depend on vim's regex highlighting system (such as Ruby) for indent rules.
-        --  If you are experiencing weird indenting issues, add the language to
-        --  the list of additional_vim_regex_highlighting and disabled languages for indent.
-        additional_vim_regex_highlighting = { 'ruby' },
-      },
-      indent = { enable = true, disable = { 'ruby' } },
-    },
-    config = function(_, opts)
-      -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
+        'yaml',
+      }
+      local available = ts.get_available()
+      local installed = ts.get_installed()
+      local to_install = vim.tbl_filter(function(lang)
+        return vim.tbl_contains(available, lang) and not vim.tbl_contains(installed, lang)
+      end, wanted)
+      if #to_install > 0 then
+        ts.install(to_install)
+      end
 
-      ---@diagnostic disable-next-line: missing-fields
-      require('nvim-treesitter.configs').setup(opts)
-
-      -- There are additional nvim-treesitter modules that you can use to interact
-      -- with nvim-treesitter. You should go explore a few and see what interests you:
-      --
-      --    - Incremental selection: Included, see `:help nvim-treesitter-incremental-selection-mod`
-      --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
-      --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
+      -- Enable highlighting and indentation per buffer, installing a missing parser first.
+      vim.api.nvim_create_autocmd('FileType', {
+        group = vim.api.nvim_create_augroup('kickstart-treesitter', { clear = true }),
+        callback = function(args)
+          local lang = vim.treesitter.language.get_lang(args.match)
+          if not lang or not vim.tbl_contains(ts.get_available(), lang) then
+            return
+          end
+          local function start()
+            if not vim.api.nvim_buf_is_valid(args.buf) then
+              return
+            end
+            if pcall(vim.treesitter.start, args.buf, lang) then
+              vim.bo[args.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+            end
+          end
+          if vim.tbl_contains(ts.get_installed(), lang) then
+            start()
+          else
+            ts.install({ lang }):await(function()
+              vim.schedule(start)
+            end)
+          end
+        end,
+      })
     end,
   },
 

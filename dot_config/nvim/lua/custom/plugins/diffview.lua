@@ -26,18 +26,22 @@ return {
   keys = {
     { '<leader>gd', '<cmd>DiffviewOpen<cr>', desc = '[G]it [D]iffview open' },
     { '<leader>gD', '<cmd>DiffviewClose<cr>', desc = '[G]it [D]iffview close' },
-    { '<leader>gh', '<cmd>DiffviewFileHistory %<cr>', desc = '[G]it file [H]istory (current file)' },
+    {
+      '<leader>gh',
+      '<cmd>DiffviewFileHistory %<cr>',
+      desc = '[G]it file [H]istory (current file)',
+    },
     { '<leader>gH', '<cmd>DiffviewFileHistory<cr>', desc = '[G]it repo [H]istory' },
   },
 
   opts = {
     enhanced_diff_hl = true, -- better highlighting of changed words within lines
-    use_icons = true,        -- requires nvim-web-devicons (you have it)
+    use_icons = true, -- requires nvim-web-devicons (you have it)
 
     view = {
       default = {
         layout = 'diff2_horizontal', -- side-by-side (left=old, right=new)
-        disable_diagnostics = true,  -- less noise while reviewing diffs
+        disable_diagnostics = true, -- less noise while reviewing diffs
       },
     },
 

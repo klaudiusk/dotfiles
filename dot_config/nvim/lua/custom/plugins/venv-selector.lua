@@ -35,7 +35,8 @@ return {
           if venv then
             local python_cmd
             if string.match(venv, 'pypoetry') then
-              python_cmd = string.format('cd $(git rev-parse --show-toplevel) && poetry run ipython')
+              python_cmd =
+                string.format('cd $(git rev-parse --show-toplevel) && poetry run ipython')
             else
               python_cmd = venv .. '/bin/ipython'
             end

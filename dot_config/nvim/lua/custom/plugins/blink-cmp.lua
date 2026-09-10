@@ -24,12 +24,12 @@ return {
   opts = {
     keymap = {
       -- Preserves your existing nvim-cmp muscle memory
-      preset = 'default',                                       -- <C-y> accept, <C-n>/<C-p> navigate
+      preset = 'default', -- <C-y> accept, <C-n>/<C-p> navigate
       ['<C-e>'] = { 'show', 'show_documentation', 'hide_documentation' },
       ['<C-b>'] = { 'scroll_documentation_up', 'fallback' },
       ['<C-f>'] = { 'scroll_documentation_down', 'fallback' },
-      ['<C-l>'] = { 'snippet_forward', 'fallback' },            -- was luasnip.expand_or_jump()
-      ['<C-h>'] = { 'snippet_backward', 'fallback' },           -- was luasnip.jump(-1)
+      ['<C-l>'] = { 'snippet_forward', 'fallback' }, -- was luasnip.expand_or_jump()
+      ['<C-h>'] = { 'snippet_backward', 'fallback' }, -- was luasnip.jump(-1)
     },
 
     appearance = {
