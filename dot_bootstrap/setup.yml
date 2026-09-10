@@ -521,7 +521,7 @@
         - name: Meh-T shortcut for terminal command
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/command"
-            value: "'gnome-terminal -e tmux'"
+            value: "'gnome-terminal -- tmux'"
             state: present
           become: false
 
@@ -542,7 +542,7 @@
         - name: Meh-G shortcut for herdr command
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/command"
-            value: "'gnome-terminal -e herdr'"
+            value: "'gnome-terminal -- herdr'"
             state: present
           become: false
 
