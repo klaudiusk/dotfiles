@@ -31,6 +31,9 @@
         msg: "GSConnect installation is complete. Please log out and log back in to activate the extension."
       when: gsconnect_newly_installed | default(false)
 
+    - name: Reload udev rules
+      ansible.builtin.shell: udevadm control --reload-rules && udevadm trigger
+
   tasks:
     - name: Get my user
       ansible.builtin.set_fact:
@@ -124,6 +127,58 @@
       ansible.builtin.dnf:
         name: ghostty
         state: present
+
+    # Keymapp: ZSA flashing / layout tool for the Moonlander
+    - name: Install Keymapp dependencies
+      ansible.builtin.dnf:
+        name:
+          - libusb1
+          - webkit2gtk4.1
+          - gtk3
+        state: present
+
+    - name: Add plugdev group
+      ansible.builtin.group:
+        name: plugdev
+        system: true
+        state: present
+
+    - name: Add user to plugdev group
+      ansible.builtin.user:
+        name: "{{ remote_regular_user }}"
+        groups: plugdev
+        append: true
+
+    - name: ZSA udev rules for Keymapp and Oryx
+      ansible.builtin.copy:
+        dest: /etc/udev/rules.d/50-zsa.rules
+        mode: "0644"
+        content: |
+          # Rules for Oryx web flashing and live training
+          KERNEL=="hidraw*", ATTRS{idVendor}=="16c0", MODE="0664", GROUP="plugdev"
+          KERNEL=="hidraw*", ATTRS{idVendor}=="3297", MODE="0664", GROUP="plugdev"
+
+          # Keymapp / Wally Flashing rules for the Moonlander and Planck EZ
+          SUBSYSTEMS=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="df11", MODE:="0666", SYMLINK+="stm32_dfu"
+      notify: Reload udev rules
+
+    - name: Create ~/.local/bin
+      ansible.builtin.file:
+        path: "/home/{{ remote_regular_user }}/.local/bin"
+        state: directory
+        owner: "{{ remote_regular_user }}"
+        group: "{{ remote_regular_user }}"
+        mode: "0755"
+
+    - name: Install latest Keymapp
+      ansible.builtin.unarchive:
+        src: https://oryx.nyc3.cdn.digitaloceanspaces.com/keymapp/keymapp-latest.tar.gz
+        remote_src: true
+        dest: "/home/{{ remote_regular_user }}/.local/bin"
+        include: [keymapp]
+        owner: "{{ remote_regular_user }}"
+        group: "{{ remote_regular_user }}"
+        mode: "0755"
 
     - name: Uninstall nano-default-editor
       ansible.builtin.dnf:
