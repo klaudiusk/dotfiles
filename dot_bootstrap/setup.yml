@@ -22,7 +22,7 @@
       - { id: obsidian-life, binding: "<Control><Alt><Shift><Super>v", command: "xdg-open obsidian://open?vault=Life", name: "Obsidian Life vault" }
       - { id: obsidian-hinetra, binding: "<Control><Alt><Shift>v", command: "xdg-open obsidian://open?vault=Hinetra", name: "Obsidian Hinetra vault" }
       - { id: dnd, binding: "<Control><Alt><Shift><Super>d", command: "/home/{{ remote_regular_user }}/.local/bin/toggle-dnd", name: "Toggle Do Not Disturb" }
-      - { id: r, binding: "<Control><Alt><Shift><Super>r", command: "ghostty -e R", name: "R" }
+      - { id: r, binding: "<Control><Alt><Shift><Super>r", command: "ghostty +new-window -e R", name: "R" }
       - { id: files, binding: "<Control><Alt><Shift><Super>e", command: "nautilus --new-window", name: "Files" }
 
   handlers:
@@ -607,7 +607,7 @@
         - name: Meh-T shortcut for ghostty + tmux command
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/command"
-            value: "'ghostty -e tmux'"
+            value: "'ghostty +new-window -e tmux'"
             state: present
           become: false
 
@@ -629,7 +629,7 @@
         - name: Hyper-T shortcut for ghostty (no tmux) command
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/command"
-            value: "'ghostty'"
+            value: "'ghostty +new-window'"
             state: present
           become: false
 
@@ -668,7 +668,7 @@
         - name: Meh-G shortcut for herdr command
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/command"
-            value: "'ghostty -e herdr'"
+            value: "'ghostty +new-window -e herdr'"
             state: present
           become: false
 
