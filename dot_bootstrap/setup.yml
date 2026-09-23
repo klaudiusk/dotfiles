@@ -579,10 +579,21 @@
             state: present
           become: false
 
-        - name: Register custom keybinding
+        # Add ours to the list instead of replacing it, so shortcuts added by
+        # hand or by apps (Zoom registers its global hotkeys here) survive
+        - name: Read existing custom keybindings
+          ansible.builtin.command: dconf read /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings
+          register: existing_custom_keybindings
+          changed_when: false
+          become: false
+
+        - name: Register custom keybindings
+          vars:
+            managed_keybinding_ids: "{{ ['custom0', 'custom1', 'custom2', 'custom3', 'custom4'] + launcher_keybindings | map(attribute='id') | list }}"
+            existing_keybinding_paths: "{{ existing_custom_keybindings.stdout | from_yaml if existing_custom_keybindings.stdout.startswith('[') else [] }}"
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings"
-            value: "[{% for id in ['custom0', 'custom1', 'custom2', 'custom3', 'custom4'] + launcher_keybindings | map(attribute='id') | list %}'{{ custom_keybinding_path }}{{ id }}/'{{ ', ' if not loop.last }}{% endfor %}]"
+            value: "[{% for path in ([custom_keybinding_path] | product(managed_keybinding_ids, ['/']) | map('join') | list + existing_keybinding_paths) | unique %}'{{ path }}'{{ ', ' if not loop.last }}{% endfor %}]"
             state: present
           become: false
 
@@ -798,62 +809,46 @@
             state: present
           become: false
 
-        # Window snapping with Ctrl+Alt+Shift+hjkl
-        - name: Snap window to right half (Ctrl+Alt+Shift+l)
+        # Window management on Hyper-hjkl, one action per key (tiling and
+        # maximize toggle again to restore). Moved off Meh because Zoom owns
+        # a global Ctrl+Alt+Shift+H it does not let you change.
+        - name: Tile window to right half (Hyper-l)
           community.general.dconf:
             key: "/org/gnome/mutter/keybindings/toggle-tiled-right"
-            value: "['<Control><Alt><Shift>l']"
+            value: "['<Control><Alt><Shift><Super>l']"
             state: present
           become: false
 
-        - name: Snap window to left half (Ctrl+Alt+Shift+h)
+        - name: Tile window to left half (Hyper-h)
           community.general.dconf:
             key: "/org/gnome/mutter/keybindings/toggle-tiled-left"
-            value: "['<Control><Alt><Shift>h']"
+            value: "['<Control><Alt><Shift><Super>h']"
             state: present
           become: false
 
-        - name: Maximize window (Ctrl+Alt+Shift+k)
+        - name: Toggle maximize (Hyper-k)
           community.general.dconf:
             key: "/org/gnome/desktop/wm/keybindings/toggle-maximized"
-            value: "['<Control><Alt><Shift>k']"
+            value: "['<Control><Alt><Shift><Super>k']"
             state: present
           become: false
 
-        - name: Restore window (Ctrl+Alt+Shift+j)
+        - name: Minimize window (Hyper-j)
           community.general.dconf:
             key: "/org/gnome/desktop/wm/keybindings/minimize"
-            value: "['<Control><Alt><Shift>j']"
+            value: "['<Control><Alt><Shift><Super>j']"
             state: present
           become: false
 
-        # Window snapping with Ctrl+Alt+Shift+hjkl (actual letters, not arrows)
-        - name: Snap window to left (Ctrl+Alt+Shift+h)
+        # These used to share the keys above, and whichever GNOME picked won.
+        # Cleared rather than reset: the default Super+Up/Down would clash
+        # with the workspace shortcuts.
+        - name: Clear duplicate window keybindings
           community.general.dconf:
-            key: "/org/gnome/desktop/wm/keybindings/move-to-side-w"
-            value: "['<Control><Alt><Shift>h']"
+            key: "/org/gnome/desktop/wm/keybindings/{{ item }}"
+            value: "@as []"
             state: present
-          become: false
-
-        - name: Snap window to right (Ctrl+Alt+Shift+l)
-          community.general.dconf:
-            key: "/org/gnome/desktop/wm/keybindings/move-to-side-e"
-            value: "['<Control><Alt><Shift>l']"
-            state: present
-          become: false
-
-        - name: Maximize window (Ctrl+Alt+Shift+k)
-          community.general.dconf:
-            key: "/org/gnome/desktop/wm/keybindings/maximize"
-            value: "['<Control><Alt><Shift>k']"
-            state: present
-          become: false
-
-        - name: Restore window (Ctrl+Alt+Shift+j)
-          community.general.dconf:
-            key: "/org/gnome/desktop/wm/keybindings/unmaximize"
-            value: "['<Control><Alt><Shift>j']"
-            state: present
+          loop: [move-to-side-w, move-to-side-e, maximize, unmaximize]
           become: false
 
         - name: Terminal profile background color
