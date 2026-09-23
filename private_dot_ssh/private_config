@@ -1,3 +1,6 @@
+# Machine-specific hosts (e.g. per-machine storage box sub-accounts)
+Include ~/.ssh/config.local
+
 Host borgserver
     HostName kalcher.one
     User borg
@@ -16,6 +19,13 @@ Host github-impact
     User git
     IdentityFile ~/.ssh/id_ed25519_github-impact
     IdentityAgent none
+    IdentitiesOnly yes
+
+Host storagebox-admin
+    HostName u675073.your-storagebox.de
+    User u675073
+    Port 23
+    IdentityFile ~/.ssh/hetzner_storagebox_1p.pub
     IdentitiesOnly yes
 
 Host *
