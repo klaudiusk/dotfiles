@@ -15,6 +15,15 @@
     gsconnect_firewall_ports:
       - { port: "1714-1764", protocol: "tcp" }
       - { port: "1714-1764", protocol: "udp" }
+    custom_keybinding_path: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/"
+    # Launchers on Hyper (Ctrl+Alt+Shift+Super); Meh (Ctrl+Alt+Shift) for a variant of the same app
+    launcher_keybindings:
+      - { id: firefox, binding: "<Control><Alt><Shift><Super>f", command: "firefox", name: "Firefox" }
+      - { id: obsidian-life, binding: "<Control><Alt><Shift><Super>v", command: "xdg-open obsidian://open?vault=Life", name: "Obsidian Life vault" }
+      - { id: obsidian-hinetra, binding: "<Control><Alt><Shift>v", command: "xdg-open obsidian://open?vault=Hinetra", name: "Obsidian Hinetra vault" }
+      - { id: dnd, binding: "<Control><Alt><Shift><Super>d", command: "/home/{{ remote_regular_user }}/.local/bin/toggle-dnd", name: "Toggle Do Not Disturb" }
+      - { id: r, binding: "<Control><Alt><Shift><Super>r", command: "ghostty -e R", name: "R" }
+      - { id: files, binding: "<Control><Alt><Shift><Super>e", command: "nautilus --new-window", name: "Files" }
 
   handlers:
     - name: Notify GSConnect installation completion
@@ -518,7 +527,7 @@
         - name: Register custom keybinding
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings"
-            value: "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/']"
+            value: "[{% for id in ['custom0', 'custom1', 'custom2', 'custom3', 'custom4'] + launcher_keybindings | map(attribute='id') | list %}'{{ custom_keybinding_path }}{{ id }}/'{{ ', ' if not loop.last }}{% endfor %}]"
             state: present
           become: false
 
@@ -571,6 +580,16 @@
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5/{{ item }}"
             state: absent
           loop: [binding, command, name]
+          become: false
+
+        - name: Launcher shortcuts
+          community.general.dconf:
+            key: "{{ custom_keybinding_path }}{{ item.0.id }}/{{ item.1 }}"
+            value: "'{{ item.0[item.1] }}'"
+            state: present
+          loop: "{{ launcher_keybindings | product(['binding', 'command', 'name']) | list }}"
+          loop_control:
+            label: "{{ item.0.id }}/{{ item.1 }}"
           become: false
 
         - name: Meh-G shortcut for herdr binding
@@ -866,10 +885,11 @@
             state: present
           become: false
 
-        - name: Set Caps Lock as keyboard layout switch
+        # Caps Lock switches layouts, Scroll Lock is the Compose key
+        - name: Set Caps Lock as layout switch and Scroll Lock as Compose
           community.general.dconf:
             key: "/org/gnome/desktop/input-sources/xkb-options"
-            value: "['grp:caps_toggle']"
+            value: "['grp:caps_toggle', 'compose:sclk']"
             state: present
           become: false
 
