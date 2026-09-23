@@ -1,0 +1,33 @@
+# ~/.config/ghostty/config  (Sep 2026)
+# Colours + font copied from the gnome-terminal profile
+
+font-family = JetBrainsMono Nerd Font Mono
+font-size = 13
+
+background = 002b36
+foreground = 839496
+cursor-color = 839496
+bold-is-bright = true
+
+palette = 0=#171421
+palette = 1=#e21827
+palette = 2=#26a269
+palette = 3=#a2734c
+palette = 4=#12488b
+palette = 5=#a347ba
+palette = 6=#2aa1b3
+palette = 7=#d0cfcc
+palette = 8=#5e5c64
+palette = 9=#f66151
+palette = 10=#33da7a
+palette = 11=#e9ad0c
+palette = 12=#2a7bde
+palette = 13=#c061cb
+palette = 14=#33c7de
+palette = 15=#ffffff
+
+# Native GTK4/libadwaita window
+window-decoration = true
+gtk-titlebar = true
+window-theme = dark
+mouse-hide-while-typing = true

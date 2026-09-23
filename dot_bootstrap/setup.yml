@@ -4,11 +4,11 @@
   become: true
   connection: local
   gather_facts: true
-  # edited 2026-06-30
+  # edited 2026-09-23
   vars:
     # flyctl_version: "0.1.130"
     pulumi_version: "v3.94.2"
-    zoom_version: "7.1.0.3715"  # Change to current zoom version
+    zoom_version: "7.2.1.5760"  # Change to current zoom version
     zoom_gpg_key_url: "https://zoom.us/linux/download/pubkey"
     mattermost_install_dir: "/opt/mattermost-desktop"
     miniconda_version: "latest"
@@ -104,6 +104,16 @@
     - name: Install DNF plugins core
       ansible.builtin.dnf:
         name: dnf-plugins-core
+        state: present
+
+    - name: Enable Ghostty COPR
+      community.general.copr:
+        name: scottames/ghostty
+        state: enabled
+
+    - name: Install Ghostty
+      ansible.builtin.dnf:
+        name: ghostty
         state: present
 
     - name: Uninstall nano-default-editor
@@ -490,10 +500,11 @@
     # set main dconf settings for Gnome
     - name: dconf settings
       block:
+        # US intl. with AltGr dead keys: plain US, umlauts on AltGr (q=ä p=ö y=ü s=ß)
         - name: Input sources
           community.general.dconf:
             key: "/org/gnome/desktop/input-sources/sources"
-            value: "[('xkb', 'us'), ('xkb', 'de+nodeadkeys')]"
+            value: "[('xkb', 'us+altgr-intl'), ('xkb', 'de+nodeadkeys')]"
             state: present
           become: false
 
@@ -507,29 +518,59 @@
         - name: Register custom keybinding
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings"
-            value: "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/']"
+            value: "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/']"
             state: present
           become: false
 
-        - name: Meh-T shortcut for terminal binding
+        - name: Meh-T shortcut for ghostty + tmux binding
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/binding"
             value: "'<Control><Alt><Shift>t'"
             state: present
           become: false
 
-        - name: Meh-T shortcut for terminal command
+        - name: Meh-T shortcut for ghostty + tmux command
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/command"
-            value: "'gnome-terminal -- tmux'"
+            value: "'ghostty -e tmux'"
             state: present
           become: false
 
-        - name: Meh-T shortcut for terminal name
+        - name: Meh-T shortcut for ghostty + tmux name
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/name"
-            value: "'Open terminal'"
+            value: "'Open ghostty with tmux'"
             state: present
+          become: false
+
+        # Hyper = Ctrl+Alt+Shift+Super (ZSA). Plain shell, e.g. for ssh + remote tmux
+        - name: Hyper-T shortcut for ghostty (no tmux) binding
+          community.general.dconf:
+            key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/binding"
+            value: "'<Control><Alt><Shift><Super>t'"
+            state: present
+          become: false
+
+        - name: Hyper-T shortcut for ghostty (no tmux) command
+          community.general.dconf:
+            key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/command"
+            value: "'ghostty'"
+            state: present
+          become: false
+
+        - name: Hyper-T shortcut for ghostty (no tmux) name
+          community.general.dconf:
+            key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/name"
+            value: "'Open ghostty'"
+            state: present
+          become: false
+
+        # leftover from a manually added Alt-Super-g ghostty shortcut
+        - name: Remove stale custom5 keybinding
+          community.general.dconf:
+            key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5/{{ item }}"
+            state: absent
+          loop: [binding, command, name]
           become: false
 
         - name: Meh-G shortcut for herdr binding
@@ -542,7 +583,7 @@
         - name: Meh-G shortcut for herdr command
           community.general.dconf:
             key: "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/command"
-            value: "'gnome-terminal -- herdr'"
+            value: "'ghostty -e herdr'"
             state: present
           become: false
 
